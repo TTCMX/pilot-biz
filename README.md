@@ -8,7 +8,7 @@ Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage). Web responsive, re
 
 | Área | Ruta | Notas |
 | --- | --- | --- |
-| Registro / login | `/signup`, `/login` | Supabase Auth (email + contraseña) |
+| Registro / login | `/signup`, `/login`, `/forgot-password`, `/reset-password` | Supabase Auth (email + contraseña, recuperación de contraseña) |
 | Onboarding | `/onboarding` | Negocio → servicios (plantillas por tipo) → horario → equipo → clientes (CSV) → página lista + reserva de prueba |
 | Dashboard | `/dashboard` | Citas de hoy, reservado, espacios libres, cancelaciones, próxima cita, nuevas reservas, ingresos hoy/semana/mes |
 | Agenda | `/calendar` | Vista día (columnas por profesional) y semana, crear/editar/mover (drag & drop)/confirmar/completar/no-show/cancelar, rebooking |
@@ -36,6 +36,7 @@ supabase/setup.sql            Esquema completo + RLS (aislamiento por business_i
 - **Página pública**: nunca usa la anon key contra tablas; pasa por el servidor con la service role key, que valida todo.
 - **Métricas derivadas** (visitas, gasto, ticket, última/próxima cita) en la vista `customer_stats`, no duplicadas.
 - **Mensajes**: solo sugeridos; la dueña los copia o abre WhatsApp manualmente.
+- **Correos** (opcional, Resend): confirmación/cambio/cancelación a la clienta y avisos a la dueña, enviados después de responder (`after()`), así nunca frenan ni rompen una reserva.
 
 ## Idiomas
 

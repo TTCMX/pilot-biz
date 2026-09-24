@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// Email confirmation / magic link landing: exchanges the code for a session.
+// Landing for email links (signup confirmation, password reset): exchanges the code for a session.
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
   const next = nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/dashboard";
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) return NextResponse.redirect(`${origin}${next}`);
   }
-  return NextResponse.redirect(`${origin}${next}`);
+  // Expired, already used, or opened in a different browser.
+  return NextResponse.redirect(`${origin}/login?error=link`);
 }

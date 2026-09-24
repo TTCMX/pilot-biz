@@ -7,6 +7,7 @@ import { BookingError, createAppointment, findOrCreateCustomer, rescheduleAppoin
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toE164 } from "@/lib/phone";
 import { audit } from "@/lib/audit";
+import { notifyAppointment, notifyWaitlist } from "@/lib/notifications";
 import type { Appointment } from "@/lib/types";
 import { fail, ok, type ActionResult } from "./result";
 
@@ -62,6 +63,7 @@ export async function createPublicBooking(input: z.input<typeof bookingSchema>):
       enforceAvailability: true,
     });
     await audit(db, { business_id: business.id, actor_id: null, action: "create", entity: "appointment", entity_id: appt.id, data: { source: "booking_page" } });
+    notifyAppointment("booked", appt.id);
     refresh();
     return ok({ token: appt.public_token });
   } catch (e) {
@@ -87,6 +89,7 @@ export async function cancelPublicBooking(slug: string, token: string): Promise<
   if (!["scheduled", "confirmed"].includes(appt.status) || Date.parse(appt.start_at) < Date.now()) return fail("errors.cannot_change");
   await db.from("appointments").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", appt.id);
   await audit(db, { business_id: business.id, actor_id: null, action: "status:cancelled", entity: "appointment", entity_id: appt.id, data: { by: "customer" } });
+  notifyAppointment("cancelled", appt.id);
   refresh();
   revalidatePath(`/${slug}/a/${token}`);
   return ok(undefined);
@@ -107,6 +110,7 @@ export async function reschedulePublicBooking(slug: string, token: string, start
     return fail("errors.generic");
   }
   await audit(db, { business_id: business.id, actor_id: null, action: "reschedule", entity: "appointment", entity_id: appt.id, data: { by: "customer", from: appt.start_at, to: startAt } });
+  notifyAppointment("rescheduled", appt.id);
   refresh();
   revalidatePath(`/${slug}/a/${token}`);
   return ok(undefined);
@@ -136,7 +140,7 @@ export async function joinPublicWaitlist(input: z.input<typeof waitlistSchema>):
     if (!staff) return fail("errors.not_found");
   }
   const customer = await findOrCreateCustomer(db, business, { ...v, source: "booking_page" });
-  const { error } = await db.from("waitlist_entries").insert({
+  const { data: entry, error } = await db.from("waitlist_entries").insert({
     business_id: business.id,
     customer_id: customer.id,
     service_id: v.serviceId,
@@ -146,8 +150,9 @@ export async function joinPublicWaitlist(input: z.input<typeof waitlistSchema>):
     preferred_end_time: v.preferredEnd,
     notes: v.notes || null,
     source: "booking_page",
-  });
+  }).select("id").single();
   if (error) return fail("errors.generic");
+  notifyWaitlist(entry.id);
   refresh();
   return ok(undefined);
 }

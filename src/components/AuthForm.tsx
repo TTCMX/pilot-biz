@@ -6,7 +6,7 @@ import { signIn, signUp, type AuthState } from "@/app/auth/actions";
 import { useI18n } from "@/components/I18nProvider";
 import type { MessageKey } from "@/lib/i18n";
 
-export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
+export function AuthForm({ mode, next, linkError }: { mode: "login" | "signup"; next?: string; linkError?: boolean }) {
   const { t } = useI18n();
   const [state, action, pending] = useActionState<AuthState, FormData>(mode === "login" ? signIn : signUp, undefined);
   const msg = (k?: string) => (k ? (k.includes(".") ? t(k as MessageKey) : k) : null);
@@ -17,6 +17,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       <div className="card">
         <h1 className="h2 mb-1">{mode === "login" ? t("auth.login_title") : t("auth.signup_title")}</h1>
         <p className="muted mb-5">{mode === "login" ? t("auth.login_subtitle") : t("auth.signup_subtitle")}</p>
+        {linkError && !state && <p className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{t("auth.link_expired")}</p>}
         {state?.info ? (
           <p className="rounded-xl bg-green-50 p-3 text-sm text-green-800">{msg(state.info)}</p>
         ) : (
@@ -25,17 +26,20 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
             {mode === "signup" && (
               <div>
                 <label className="label" htmlFor="name">{t("auth.name")}</label>
-                <input className="input" id="name" name="name" autoComplete="name" required />
+                <input className="input" id="name" name="name" autoComplete="name" defaultValue={state?.name} required />
               </div>
             )}
             <div>
               <label className="label" htmlFor="email">{t("auth.email")}</label>
-              <input className="input" id="email" name="email" type="email" autoComplete="email" required />
+              <input className="input" id="email" name="email" type="email" autoComplete="email" defaultValue={state?.email} required />
             </div>
             <div>
               <label className="label" htmlFor="password">{t("auth.password")}</label>
               <input className="input" id="password" name="password" type="password" minLength={mode === "signup" ? 8 : undefined} autoComplete={mode === "login" ? "current-password" : "new-password"} required />
               {mode === "signup" && <p className="mt-1 text-xs text-stone-500">{t("auth.password_hint")}</p>}
+              {mode === "login" && (
+                <Link href="/forgot-password" className="mt-1.5 inline-block text-xs font-medium text-brand-600">{t("auth.forgot_link")}</Link>
+              )}
             </div>
             {state?.error && <p className="text-sm text-red-600">{msg(state.error)}</p>}
             <button className="btn-primary w-full" disabled={pending}>
