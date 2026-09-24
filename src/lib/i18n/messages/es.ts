@@ -419,4 +419,5 @@ export const es: Record<MessageKey, string> = {
   "email.owner.waitlist.subject": "Lista de espera: {name} quiere {service}",
   "email.owner.waitlist.heading": "Alguien se unió a tu lista de espera",
   "email.owner.waitlist.intro": "A {name} le gustaría {service}. Cuando se libere un horario compatible lo verás en tu lista de espera.",
+  "errors.rate_limited": "Demasiadas reservas en poco tiempo. Intenta más tarde o contacta al negocio.",
 };
