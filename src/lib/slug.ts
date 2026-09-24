@@ -1,6 +1,6 @@
 export const RESERVED_SLUGS = new Set([
   "login", "signup", "auth", "dashboard", "calendar", "customers", "services", "staff", "waitlist", "settings",
-  "onboarding", "api", "admin", "app", "www", "help", "about", "pricing", "terms", "privacy", "b", "a", "static", "public",
+  "onboarding", "forgot-password", "reset-password", "api", "admin", "app", "www", "help", "about", "pricing", "terms", "privacy", "b", "a", "static", "public",
 ]);
 
 export function slugify(input: string): string {

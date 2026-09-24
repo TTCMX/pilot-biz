@@ -15,7 +15,7 @@ Todo lo que tienes que hacer fuera del código está en esta página. Tiempo est
    - Si lo dejas activo también funciona: recibe un correo y el enlace la regresa a `/auth/callback` → onboarding.
 4. **Authentication → URL Configuration**
    - **Site URL**: la URL pública de la app (ej. `https://tu-app.vercel.app`).
-   - **Redirect URLs**: agrega `https://tu-app.vercel.app/auth/callback` y `http://localhost:3000/auth/callback`.
+   - **Redirect URLs**: agrega `https://tu-app.vercel.app/**` y `http://localhost:3000/**` (cubren `/auth/callback` con cualquier parámetro, que usan la confirmación de cuenta y la recuperación de contraseña).
 5. **Project Settings → API Keys**: copia estos 3 valores para el paso 2:
    - Project URL
    - `anon` / publishable key
@@ -34,6 +34,34 @@ Todo lo que tienes que hacer fuera del código está en esta página. Tiempo est
 | `NEXT_PUBLIC_APP_URL` | `https://tu-app.vercel.app` (o tu dominio) |
 
 3. **Deploy**. Si cambias `NEXT_PUBLIC_*` después, vuelve a desplegar (se incrustan en el build).
+
+## 2b. Correos (Resend) — recomendado
+
+Sirve para 3 cosas: confirmación a la clienta (con su enlace para reagendar/cancelar), aviso a la dueña de reservas/cambios/cancelaciones/lista de espera, y que lleguen los correos de **recuperar contraseña**.
+
+1. Crea una cuenta en <https://resend.com>.
+2. **Domains → Add domain**: agrega tu dominio (ej. `tudominio.com`) y copia los registros DNS que te da en tu proveedor de dominio. Espera a que diga *Verified*.
+   - Sin dominio verificado Resend **solo entrega a tu propio correo**; sirve para probar, no para clientas.
+3. **API Keys → Create API key** (permiso *Sending access*).
+4. En **Vercel → Environment Variables** agrega y vuelve a desplegar:
+
+| Variable | Valor |
+| --- | --- |
+| `RESEND_API_KEY` | la API key de Resend (`re_...`) |
+| `EMAIL_FROM` | `Reservas <reservas@tudominio.com>` (un correo de tu dominio verificado) |
+
+5. **Supabase → Authentication → Emails → SMTP Settings → Enable custom SMTP** (el correo por defecto de Supabase solo entrega a los miembros de tu equipo de Supabase, así que sin esto las dueñas no reciben el enlace de recuperar contraseña):
+
+| Campo | Valor |
+| --- | --- |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | la misma API key de Resend |
+| Sender email | el mismo correo de `EMAIL_FROM` |
+| Sender name | `Pilot` (o el nombre de tu producto) |
+
+Si no configuras `RESEND_API_KEY`, la app funciona igual; simplemente no envía correos de reservas.
 
 ## 3. Probar el hito 1 (2 min)
 
@@ -57,5 +85,4 @@ npm run lint                 # typecheck
 
 - **Dominio propio**: agrégalo en Vercel y actualiza `NEXT_PUBLIC_APP_URL` + Site URL/Redirect URLs en Supabase.
 - **Backups**: el plan Pro de Supabase incluye backups diarios y Point-in-Time Recovery.
-- **SMTP propio** (Authentication → Emails) si mantienes la confirmación por correo en producción: el SMTP por defecto de Supabase tiene límites bajos.
 - **PostHog / OpenAI**: aún no se usan; no hace falta configurarlos.

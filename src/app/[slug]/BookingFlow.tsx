@@ -288,7 +288,7 @@ function DetailsForm({ onSubmit, submitLabel, compact }: { onSubmit: (c: Contact
         <input className="input" name="last_name" placeholder={t("customer.last_name")} autoComplete="family-name" />
       </div>
       <input className="input" name="phone" type="tel" placeholder={t("customer.phone")} autoComplete="tel" required />
-      {!compact && <input className="input" name="email" type="email" placeholder={`${t("customer.email")} (${t("common.optional")})`} autoComplete="email" />}
+      {!compact && <input className="input" name="email" type="email" placeholder={t("booking.email_placeholder")} autoComplete="email" />}
       {!compact && <textarea className="input" name="notes" rows={2} placeholder={`${t("booking.notes_placeholder")} (${t("common.optional")})`} />}
       <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       {error && <p className="text-sm text-red-600">{error}</p>}
