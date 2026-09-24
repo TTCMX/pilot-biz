@@ -1,11 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { canonicalRedirect } from "@/lib/canonical";
 
 const OWNER_PATHS = ["/dashboard", "/calendar", "/customers", "/services", "/staff", "/waitlist", "/settings", "/onboarding"];
 
 // Refreshes the Supabase session cookie and does an optimistic auth redirect.
 // Real authorization happens server-side (getContext) and in Postgres (RLS).
 export async function proxy(request: NextRequest) {
+  const canonical = canonicalRedirect(request.url, {
+    method: request.method,
+    appUrl: process.env.NEXT_PUBLIC_APP_URL,
+    vercelEnv: process.env.VERCEL_ENV,
+  });
+  if (canonical) return NextResponse.redirect(canonical, 308);
+
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
