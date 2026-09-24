@@ -406,7 +406,7 @@ export const es: Record<MessageKey, string> = {
   "email.customer.cancelled.subject": "Reserva cancelada — {business}",
   "email.customer.cancelled.heading": "Tu reserva fue cancelada",
   "email.customer.cancelled.intro": "Tu cita en {business} del {when} fue cancelada. Puedes reservar de nuevo cuando quieras.",
-  "email.owner.footer": "Enviado por Pilot. Recibes estos correos porque administras este negocio.",
+  "email.owner.footer": "Enviado por Adina. Recibes estos correos porque administras este negocio.",
   "email.owner.new_booking.subject": "Nueva reserva: {name} · {when}",
   "email.owner.new_booking.heading": "Nueva reserva 🎉",
   "email.owner.new_booking.intro": "{name} reservó {service} desde tu página de reservas.",

@@ -76,7 +76,7 @@ Sirve para 3 cosas: confirmación a la clienta (con su enlace para reagendar/can
 | Username | `resend` |
 | Password | la misma API key de Resend |
 | Sender email | `reservas@adina.pro` |
-| Sender name | `Pilot` (o el nombre de tu producto) |
+| Sender name | `Adina` |
 
 Si no configuras `RESEND_API_KEY`, la app funciona igual; simplemente no envía correos de reservas.
 

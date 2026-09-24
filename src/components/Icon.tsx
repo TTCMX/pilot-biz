@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/lib/brand";
+
 // Material icons (Apache 2.0) as inline SVG paths: no icon font download, crisp at any size.
 
 const PATHS = {
@@ -61,7 +63,7 @@ export function Logo({ withName = true, className = "" }: { withName?: boolean; 
         <circle cx="10" cy="22" r="7" fill="#34a853" />
         <circle cx="22" cy="22" r="7" fill="#fbbc04" />
       </svg>
-      {withName && <span className="text-[22px] font-normal tracking-tight text-stone-600">Pilot</span>}
+      {withName && <span className="text-[22px] font-normal tracking-tight text-stone-600">{APP_NAME}</span>}
     </span>
   );
 }

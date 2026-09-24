@@ -1,4 +1,4 @@
-# Pilot — agenda, reservas y clientes para negocios de citas
+# Adina — agenda, reservas y clientes para negocios de citas
 
 Next.js 16 (App Router) + Supabase (Postgres, Auth, Storage). Web responsive, reservas mobile-first, internacional por arquitectura (moneda, zona horaria, idioma, formato y teléfono E.164 por negocio).
 
