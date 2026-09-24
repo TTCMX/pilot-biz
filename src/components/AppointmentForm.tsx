@@ -145,7 +145,7 @@ export function AppointmentForm({
         <textarea className="input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-bad-700">{error}</p>}
       <button className="btn-primary w-full" onClick={submit} disabled={pending || !service}>
         {pending ? t("common.saving") : t("appointment.create")}
       </button>
@@ -173,7 +173,7 @@ function CustomerPicker({ value, onChange, newCustomer, onNewCustomer }: {
     return (
       <div>
         <label className="label">{t("appointment.customer")}</label>
-        <div className="flex items-center justify-between rounded-xl border border-stone-200 px-3 py-2">
+        <div className="flex items-center justify-between rounded-2xl border border-stone-200 px-3 py-2">
           <span className="font-medium">{value.first_name} {value.last_name}</span>
           <button className="text-sm text-brand-600" onClick={() => onChange(null)}>{t("common.change")}</button>
         </div>
@@ -183,9 +183,9 @@ function CustomerPicker({ value, onChange, newCustomer, onNewCustomer }: {
 
   if (newCustomer) {
     return (
-      <div className="space-y-2 rounded-xl bg-stone-50 p-3">
+      <div className="space-y-2 rounded-2xl bg-stone-50 p-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold">{t("customer.new")}</span>
+          <span className="text-sm font-medium">{t("customer.new")}</span>
           <button className="text-sm text-brand-600" onClick={() => onNewCustomer(null)}>{t("common.cancel")}</button>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -201,10 +201,10 @@ function CustomerPicker({ value, onChange, newCustomer, onNewCustomer }: {
     <div>
       <label className="label">{t("appointment.customer")}</label>
       <input className="input" placeholder={t("customer.search")} value={q} onChange={(e) => setQ(e.target.value)} />
-      <ul className="mt-1 max-h-40 divide-y divide-stone-100 overflow-y-auto rounded-xl border border-stone-200">
+      <ul className="mt-1 max-h-40 divide-y divide-stone-100 overflow-y-auto rounded-2xl border border-stone-200">
         <li>
-          <button className="w-full px-3 py-2 text-left text-sm font-semibold text-brand-600" onClick={() => onNewCustomer({ first_name: q, last_name: "", phone: "" })}>
-            + {t("customer.new")}{q ? `: ${q}` : ""}
+          <button className="w-full px-3 py-2 text-left text-sm font-medium text-brand-600" onClick={() => onNewCustomer({ first_name: q, last_name: "", phone: "" })}>
+            {t("customer.new")}{q ? `: ${q}` : ""}
           </button>
         </li>
         {results.map((c) => (

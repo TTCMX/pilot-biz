@@ -53,7 +53,7 @@ export function CustomerForm({ customer, onSaved }: { customer?: Customer; onSav
         <label className="label">{t("customer.notes")}</label>
         <textarea className="input" name="notes" rows={3} defaultValue={customer?.notes ?? ""} />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-bad-700">{error}</p>}
       <button className="btn-primary w-full" disabled={pending}>{pending ? t("common.saving") : t("common.save")}</button>
     </form>
   );

@@ -1,3 +1,5 @@
+import { APP_NAME } from "@/lib/brand";
+
 // Transactional email via the Resend HTTP API. Optional: without RESEND_API_KEY
 // nothing is sent and the app keeps working exactly the same.
 
@@ -16,7 +18,7 @@ function fromHeader(name: string | undefined): string {
   const configured = process.env.EMAIL_FROM?.trim() || DEFAULT_FROM;
   const address = configured.match(/<([^>]+)>/)?.[1] ?? configured;
   const configuredName = configured.includes("<") ? configured.slice(0, configured.indexOf("<")).trim().replace(/^"|"$/g, "") : "";
-  const display = (name || configuredName || "Pilot").replace(/["<>\r\n]/g, "").slice(0, 60);
+  const display = (name || configuredName || APP_NAME).replace(/["<>\r\n]/g, "").slice(0, 60);
   return `"${display}" <${address}>`;
 }
 

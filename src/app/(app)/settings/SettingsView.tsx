@@ -10,6 +10,7 @@ import { BUSINESS_TYPES } from "@/lib/templates";
 import { weekdayName } from "@/lib/i18n/format";
 import type { MessageKey } from "@/lib/i18n";
 import type { Business } from "@/lib/types";
+import { Icon } from "@/components/Icon";
 
 export function SettingsView({ business, bookingUrl, appUrl }: { business: Business; bookingUrl: string; appUrl: string }) {
   const { t, locale } = useI18n();
@@ -37,16 +38,17 @@ export function SettingsView({ business, bookingUrl, appUrl }: { business: Busin
       <h1 className="h1">{t("nav.settings")}</h1>
 
       <div className="grid grid-cols-2 gap-2 md:hidden">
-        <Link href="/services" className="btn-secondary">💅 {t("nav.services")}</Link>
-        <Link href="/staff" className="btn-secondary">🧑‍💼 {t("nav.staff")}</Link>
+        <Link href="/services" className="btn-tonal"><Icon name="cut" size={18} />{t("nav.services")}</Link>
+        <Link href="/staff" className="btn-tonal"><Icon name="team" size={18} />{t("nav.staff")}</Link>
       </div>
 
       <section className="card space-y-3">
         <h2 className="h2">{t("settings.booking_page")}</h2>
-        <div className="flex items-center gap-2 rounded-xl bg-stone-100 p-3">
+        <div className="flex items-center gap-2 rounded-2xl bg-stone-100 py-2 pl-4 pr-2">
+          <Icon name="link" size={20} className="text-stone-500" />
           <span className="flex-1 truncate font-mono text-sm">{bookingUrl}</span>
-          <button className="btn-secondary btn-sm" onClick={() => { navigator.clipboard?.writeText(bookingUrl); setCopied(true); }}>{copied ? t("common.copied") : t("booking_page.copy_link")}</button>
-          <a className="btn-secondary btn-sm" href={bookingUrl} target="_blank" rel="noreferrer">↗</a>
+          <button className="btn-secondary btn-sm" onClick={() => { navigator.clipboard?.writeText(bookingUrl); setCopied(true); }}><Icon name="copy" size={16} />{copied ? t("common.copied") : t("booking_page.copy_link")}</button>
+          <a className="btn-secondary btn-sm" href={bookingUrl} target="_blank" rel="noreferrer" aria-label="open"><Icon name="openInNew" size={16} /></a>
         </div>
       </section>
 
@@ -57,7 +59,7 @@ export function SettingsView({ business, bookingUrl, appUrl }: { business: Busin
             // eslint-disable-next-line @next/next/no-img-element
             <img src={business.logo_url} alt="" className="size-16 rounded-2xl border border-stone-200 object-cover" />
           ) : (
-            <div className="flex size-16 items-center justify-center rounded-2xl bg-brand-100 text-2xl font-bold text-brand-700">{business.name[0]}</div>
+            <div className="flex size-16 items-center justify-center rounded-2xl bg-brand-100 text-2xl font-medium text-brand-700">{business.name[0]}</div>
           )}
           <form action={(f) => start(async () => done(await uploadLogo(f)))} className="flex flex-1 flex-wrap items-center gap-2">
             <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="text-sm" required />
@@ -153,7 +155,7 @@ export function SettingsView({ business, bookingUrl, appUrl }: { business: Busin
           </Field>
         </div>
 
-        {message && <p className={`text-sm ${message.ok ? "text-green-700" : "text-red-600"}`}>{message.text}</p>}
+        {message && <p className={`text-sm ${message.ok ? "text-ok-700" : "text-bad-700"}`}>{message.text}</p>}
         <button className="btn-primary w-full" disabled={pending}>{pending ? t("common.saving") : t("common.save")}</button>
       </form>
 

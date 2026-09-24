@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <HtmlLang lang={business.language} />
       <div className="min-h-dvh md:flex">
         <AppNav businessName={business.name} slug={business.slug} />
-        <main className="min-w-0 flex-1 px-4 pb-28 pt-4 sm:px-6 md:pb-10 md:pt-8 lg:px-10">{children}</main>
+        <main className="min-w-0 flex-1 px-4 pb-28 pt-2 sm:px-6 md:pb-10 md:pl-2 md:pr-8 md:pt-6">{children}</main>
       </div>
     </I18nProvider>
   );

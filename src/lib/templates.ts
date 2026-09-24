@@ -78,4 +78,4 @@ export function serviceTemplates(type: string, currency: string) {
   return list.map((t) => ({ nameKey: t.key, duration_minutes: t.duration, price: roundNice(t.usd * factor) }));
 }
 
-export const STAFF_COLORS = ["#e11d48", "#7c3aed", "#0891b2", "#059669", "#d97706", "#db2777", "#2563eb", "#65a30d"];
+export const STAFF_COLORS = ["#1a73e8", "#d93025", "#188038", "#f9ab00", "#9334e6", "#e8710a", "#12b5cb", "#e52592"];

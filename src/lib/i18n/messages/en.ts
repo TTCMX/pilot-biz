@@ -404,7 +404,7 @@ export const en = {
   "email.customer.cancelled.subject": "Booking cancelled — {business}",
   "email.customer.cancelled.heading": "Your booking was cancelled",
   "email.customer.cancelled.intro": "Your appointment at {business} on {when} was cancelled. You can book again whenever you like.",
-  "email.owner.footer": "Sent by Pilot. You get these emails because you manage this business.",
+  "email.owner.footer": "Sent by Adina. You get these emails because you manage this business.",
   "email.owner.new_booking.subject": "New booking: {name} · {when}",
   "email.owner.new_booking.heading": "New booking 🎉",
   "email.owner.new_booking.intro": "{name} booked {service} from your booking page.",

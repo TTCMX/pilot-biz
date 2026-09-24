@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { useI18n } from "@/components/I18nProvider";
 import { Modal } from "@/components/Modal";
-import { StatusBadge, STATUS_STYLES } from "@/components/StatusBadge";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Icon } from "@/components/Icon";
+import { Avatar } from "@/components/Avatar";
 import { AppointmentForm, type AppointmentPrefill, type FormService, type FormStaff, type PickerCustomer } from "@/components/AppointmentForm";
 import { moveAppointment, setAppointmentStatus, updateAppointmentDetails } from "@/app/actions/appointments";
 import { getWorkingIntervals, type AvailabilityException, type AvailabilityRule } from "@/lib/booking/engine";
@@ -47,6 +49,47 @@ type Props = {
 };
 
 const HOUR_PX = 64;
+
+/** Side-by-side layout for overlapping events: returns column index and column count per event. */
+function layoutOverlaps<T extends { id: string; start_at: string; end_at: string }>(items: T[]): Map<string, { col: number; cols: number }> {
+  const sorted = [...items].sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at) || Date.parse(b.end_at) - Date.parse(a.end_at));
+  const out = new Map<string, { col: number; cols: number }>();
+  let cluster: { id: string; end: number; col: number }[] = [];
+  let clusterEnd = -Infinity;
+  const flush = () => {
+    const cols = Math.max(1, ...cluster.map((c) => c.col + 1));
+    for (const c of cluster) out.set(c.id, { col: c.col, cols });
+    cluster = [];
+  };
+  for (const e of sorted) {
+    const start = Date.parse(e.start_at);
+    const end = Date.parse(e.end_at);
+    if (start >= clusterEnd) flush();
+    const used = new Set(cluster.filter((c) => c.end > start).map((c) => c.col));
+    let col = 0;
+    while (used.has(col)) col++;
+    cluster.push({ id: e.id, end, col });
+    clusterEnd = Math.max(clusterEnd === -Infinity ? end : clusterEnd, end);
+  }
+  flush();
+  return out;
+}
+
+/** Google Calendar–like event styles: confirmed = solid, scheduled = tinted, done = faded. */
+function blockStyle(status: AppointmentStatus, color: string): React.CSSProperties {
+  switch (status) {
+    case "confirmed":
+      return { background: color, color: "#fff" };
+    case "completed":
+      return { background: color, color: "#fff", opacity: 0.55 };
+    case "cancelled":
+      return { background: "#fff", color: "#5f6368", boxShadow: `inset 0 0 0 1px ${color}66` };
+    case "no_show":
+      return { background: "#ffefc9", color: "#5c4300", boxShadow: `inset 3px 0 0 ${color}` };
+    default:
+      return { background: `${color}26`, color: "#1f1f1f", boxShadow: `inset 3px 0 0 ${color}` };
+  }
+}
 const SNAP_MIN = 15;
 
 export function CalendarView(props: Props) {
@@ -58,6 +101,11 @@ export function CalendarView(props: Props) {
   const [selected, setSelected] = useState<CalendarAppointment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showCancelled, setShowCancelled] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const nav = (params: Record<string, string | null>) => {
     const sp = new URLSearchParams({ date, view, ...(staffFilter ? { staff: staffFilter } : {}) });
@@ -140,78 +188,102 @@ export function CalendarView(props: Props) {
     ? DateTime.fromISO(date).setLocale(locale).toFormat("cccc d LLLL")
     : `${DateTime.fromISO(days[0]).setLocale(locale).toFormat("d LLL")} – ${DateTime.fromISO(days[6]).setLocale(locale).toFormat("d LLL yyyy")}`;
 
+  const todayLocal = DateTime.fromMillis(now).setZone(timezone).toISODate();
+  const nowMinutes = (() => {
+    const d = DateTime.fromMillis(now).setZone(timezone);
+    return d.hour * 60 + d.minute;
+  })();
+
   return (
     <div className="mx-auto max-w-7xl space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="h1 mr-auto first-letter:uppercase">{heading}</h1>
-        <div className="flex rounded-xl border border-stone-300 bg-white p-0.5">
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <button className="btn-secondary btn-sm" onClick={() => nav({ date: DateTime.now().setZone(timezone).toISODate()! })}>{t("calendar.today")}</button>
+        <div className="flex">
+          <button className="icon-btn" onClick={() => shift(-1)} aria-label="prev"><Icon name="chevronLeft" size={24} /></button>
+          <button className="icon-btn" onClick={() => shift(1)} aria-label="next"><Icon name="chevronRight" size={24} /></button>
+        </div>
+        <h1 className="mr-auto text-[22px] font-normal text-stone-900 first-letter:uppercase sm:text-[26px]">{heading}</h1>
+        <div className="flex h-10 overflow-hidden rounded-full border border-stone-300">
           {(["day", "week"] as const).map((v) => (
-            <button key={v} onClick={() => nav({ view: v })} className={`rounded-lg px-3 py-1.5 text-sm font-medium ${view === v ? "bg-brand-600 text-white" : "text-stone-600"}`}>
+            <button
+              key={v}
+              onClick={() => nav({ view: v })}
+              className={`flex items-center gap-1.5 px-4 text-sm font-medium transition-colors ${view === v ? "bg-nav text-nav-on" : "bg-white text-stone-700 hover:bg-stone-100"} ${v === "week" ? "border-l border-stone-300" : ""}`}
+            >
+              {view === v && <Icon name="check" size={16} />}
               {t(`calendar.${v}`)}
             </button>
           ))}
         </div>
-        <div className="flex gap-1">
-          <button className="btn-secondary btn-sm" onClick={() => shift(-1)} aria-label="prev">‹</button>
-          <button className="btn-secondary btn-sm" onClick={() => nav({ date: DateTime.now().setZone(timezone).toISODate()! })}>{t("calendar.today")}</button>
-          <button className="btn-secondary btn-sm" onClick={() => shift(1)} aria-label="next">›</button>
-        </div>
-        <button className="btn-primary btn-sm" onClick={() => setCreating({ date })}>+ {t("calendar.new_appointment")}</button>
+        <button className="btn-primary hidden sm:inline-flex md:hidden" onClick={() => setCreating({ date })}><Icon name="add" size={18} />{t("calendar.new_appointment")}</button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <input type="date" className="input w-auto py-1.5" value={date} onChange={(e) => e.target.value && nav({ date: e.target.value })} />
+        <input type="date" className="input h-10 w-auto" value={date} onChange={(e) => e.target.value && nav({ date: e.target.value })} />
         {staff.length > 1 && (
-          <select className="input w-auto py-1.5" value={staffFilter ?? ""} onChange={(e) => nav({ staff: e.target.value || null })}>
+          <select className="input h-10 w-auto" value={staffFilter ?? ""} onChange={(e) => nav({ staff: e.target.value || null })}>
             <option value="">{t("calendar.all_staff")}</option>
             {staff.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
         )}
-        <label className="flex items-center gap-1.5 text-sm text-stone-600">
-          <input type="checkbox" className="accent-brand-600" checked={showCancelled} onChange={(e) => setShowCancelled(e.target.checked)} />
+        <label className="flex h-10 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm text-stone-600 hover:bg-stone-100">
+          <input type="checkbox" className="size-4" checked={showCancelled} onChange={(e) => setShowCancelled(e.target.checked)} />
           {t("calendar.show_cancelled")}
         </label>
-        <span className="ml-auto hidden text-xs text-stone-400 md:inline">{t("calendar.drag_hint")}</span>
+        <span className="ml-auto hidden text-xs text-stone-400 lg:inline">{t("calendar.drag_hint")}</span>
       </div>
 
-      {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="rounded-2xl bg-bad-100 p-4 text-sm text-bad-700">{error}</p>}
       {!services.length && (
-        <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          {t("calendar.no_services")} <Link className="font-semibold underline" href="/services">{t("nav.services")}</Link>
+        <p className="rounded-2xl bg-warn-100 p-4 text-sm text-warn-700">
+          {t("calendar.no_services")} <Link className="font-medium underline" href="/services">{t("nav.services")}</Link>
         </p>
       )}
 
-      <div className={`overflow-x-auto rounded-2xl border border-stone-200 bg-white ${pending ? "opacity-70" : ""}`}>
-        <div className="flex" style={{ minWidth: columns.length > 1 ? columns.length * 140 + 56 : undefined }}>
-          <div className="w-14 shrink-0 border-r border-stone-100">
-            <div className="h-10 border-b border-stone-200" />
-            {hours.map((h) => (
-              <div key={h} className="relative text-right text-[11px] text-stone-400" style={{ height: HOUR_PX }}>
-                <span className="absolute -top-2 right-1.5 whitespace-nowrap">{new Intl.DateTimeFormat(locale, { hour: "numeric", timeZone: "UTC" }).format(Date.UTC(2000, 0, 1, h))}</span>
+      <div className={`overflow-x-auto rounded-3xl bg-white shadow-card ${pending ? "opacity-70" : ""}`}>
+        <div className="flex" style={{ minWidth: columns.length > 1 ? columns.length * 140 + 64 : undefined }}>
+          <div className="w-16 shrink-0">
+            <div className="h-16" />
+            {hours.map((h, i) => (
+              <div key={h} className="relative text-right text-[11px] text-stone-500" style={{ height: HOUR_PX }}>
+                {i > 0 && <span className="absolute -top-2 right-3 whitespace-nowrap">{new Intl.DateTimeFormat(locale, { hour: "numeric", timeZone: "UTC" }).format(Date.UTC(2000, 0, 1, h))}</span>}
               </div>
             ))}
           </div>
           {columns.map((col) => {
             const colAppts = appointments.filter(
-              (a) => localTimeOf(a.start_at, timezone) && DateTime.fromISO(a.start_at).setZone(timezone).toISODate() === col.date && col.staffIds.includes(a.staff_id) && (showCancelled || a.status !== "cancelled"),
+              (a) => DateTime.fromISO(a.start_at).setZone(timezone).toISODate() === col.date && col.staffIds.includes(a.staff_id) && (showCancelled || a.status !== "cancelled"),
             );
             // Shade working hours of the column's staff.
             const working = col.staffIds.flatMap((sid) => getWorkingIntervals(sid, col.date, timezone, rules, exceptions));
             const dayStart = DateTime.fromISO(col.date, { zone: timezone }).startOf("day").toMillis();
+            const isToday = col.date === todayLocal;
+            const d = DateTime.fromISO(col.date).setLocale(locale);
+            const nowTop = (nowMinutes - startHour * 60) * (HOUR_PX / 60);
             return (
-              <div key={col.key} className="min-w-[140px] flex-1 border-r border-stone-100 last:border-r-0">
-                <div className="sticky top-0 z-10 flex h-10 items-center justify-center gap-1.5 border-b border-stone-200 bg-white px-2 text-sm font-semibold capitalize">
-                  {col.color && <span className="size-2.5 rounded-full" style={{ background: col.color }} />}
+              <div key={col.key} className="min-w-[140px] flex-1 border-l border-stone-200">
+                <div className="sticky top-0 z-10 flex h-16 flex-col items-center justify-center gap-0.5 bg-white px-2">
                   {view === "week" ? (
-                    <button onClick={() => nav({ date: col.date, view: "day" })} className={col.date === DateTime.now().setZone(timezone).toISODate() ? "text-brand-600" : ""}>{col.title}</button>
+                    <button onClick={() => nav({ date: col.date, view: "day" })} className="flex flex-col items-center gap-0.5">
+                      <span className={`text-[11px] font-medium uppercase ${isToday ? "text-brand-600" : "text-stone-500"}`}>{d.toFormat("ccc")}</span>
+                      <span className={`flex size-9 items-center justify-center rounded-full text-[20px] ${isToday ? "bg-brand-600 text-white" : "text-stone-800 hover:bg-stone-100"}`}>{d.day}</span>
+                    </button>
+                  ) : staff.length > 1 ? (
+                    <span className="flex items-center gap-2 text-sm font-medium text-stone-800">
+                      <Avatar name={col.title} size={28} color={col.color} />
+                      <span className="truncate">{col.title}</span>
+                    </span>
                   ) : (
-                    col.title
+                    <>
+                      <span className={`text-[11px] font-medium uppercase ${isToday ? "text-brand-600" : "text-stone-500"}`}>{d.toFormat("ccc")}</span>
+                      <span className={`flex size-9 items-center justify-center rounded-full text-[20px] ${isToday ? "bg-brand-600 text-white" : "text-stone-800"}`}>{d.day}</span>
+                    </>
                   )}
                 </div>
                 <div
-                  className="relative cursor-pointer bg-stone-50"
+                  className="relative cursor-pointer bg-stone-100/70"
                   style={{ height: hours.length * HOUR_PX }}
                   onClick={(e) => onEmptyClick(e, col)}
                   onDragOver={(e) => e.preventDefault()}
@@ -223,12 +295,15 @@ export function CalendarView(props: Props) {
                     return <div key={i} className="pointer-events-none absolute inset-x-0 bg-white" style={{ top, height }} />;
                   })}
                   {hours.map((h, i) => (
-                    <div key={h} className="pointer-events-none absolute inset-x-0 border-t border-stone-100" style={{ top: i * HOUR_PX }} />
+                    <div key={h} className="pointer-events-none absolute inset-x-0 border-t border-stone-200" style={{ top: i * HOUR_PX }} />
                   ))}
-                  {colAppts.map((a) => {
+                  {(() => {
+                    const layout = layoutOverlaps(colAppts);
+                    return colAppts.map((a) => {
+                    const { col: lane, cols: lanes } = layout.get(a.id) ?? { col: 0, cols: 1 };
                     const top = (minutesOf(a.start_at) - startHour * 60) * (HOUR_PX / 60);
                     const height = Math.max(22, ((Date.parse(a.end_at) - Date.parse(a.start_at)) / 60000) * (HOUR_PX / 60) - 2);
-                    const color = staffById.get(a.staff_id)?.color ?? "#db2777";
+                    const color = staffById.get(a.staff_id)?.color ?? "#1a73e8";
                     return (
                       <button
                         key={a.id}
@@ -238,22 +313,33 @@ export function CalendarView(props: Props) {
                           e.dataTransfer.setData("text/offset", String(e.clientY - e.currentTarget.getBoundingClientRect().top));
                         }}
                         onClick={() => setSelected(a)}
-                        className={`absolute inset-x-1 overflow-hidden rounded-lg border-l-4 px-2 py-1 text-left text-xs shadow-sm ${a.status === "cancelled" ? "bg-stone-100 opacity-60" : "bg-white hover:shadow-md"}`}
-                        style={{ top, height, borderLeftColor: color }}
+                        className="absolute overflow-hidden rounded-lg px-2 py-1 text-left text-xs leading-snug ring-1 ring-white transition-shadow hover:z-10 hover:shadow-float"
+                        style={{ top, height, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 6px)`, ...blockStyle(a.status, color) }}
                       >
-                        <div className="truncate font-semibold">{a.customer?.first_name} {a.customer?.last_name}</div>
-                        <div className="truncate text-stone-500">{time(a.start_at)} · {a.service?.name}</div>
-                        {view === "week" && staff.length > 1 && <div className="truncate text-stone-400">{staffById.get(a.staff_id)?.name}</div>}
-                        {a.status !== "scheduled" && <span className={`chip mt-0.5 ${STATUS_STYLES[a.status]}`}>{t(`status.${a.status}`)}</span>}
+                        <div className={`truncate font-medium ${a.status === "cancelled" ? "line-through" : ""}`}>{a.customer?.first_name} {a.customer?.last_name}</div>
+                        <div className="truncate opacity-90">{time(a.start_at)} · {a.service?.name}</div>
+                        {view === "week" && staff.length > 1 && height > 56 && <div className="truncate opacity-80">{staffById.get(a.staff_id)?.name}</div>}
+                        {height > 50 && a.status !== "scheduled" && a.status !== "confirmed" && <div className="mt-0.5 truncate font-medium opacity-90">{t(`status.${a.status}`)}</div>}
                       </button>
                     );
-                  })}
+                    });
+                  })()}
+                  {isToday && nowTop >= 0 && nowTop <= hours.length * HOUR_PX && (
+                    <div className="pointer-events-none absolute inset-x-0 z-20" style={{ top: nowTop }}>
+                      <div className="absolute -left-1.5 -top-1.5 size-3 rounded-full bg-[#ea4335]" />
+                      <div className="h-0.5 bg-[#ea4335]" />
+                    </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      <button className="btn-fab fixed bottom-24 right-4 z-30 sm:hidden" onClick={() => setCreating({ date })} aria-label={t("calendar.new_appointment")}>
+        <Icon name="add" size={24} />
+      </button>
 
       <Modal open={!!creating} onClose={() => setCreating(null)} title={creating?.rebookedFromId ? t("appointment.rebook") : t("calendar.new_appointment")}>
         {creating && (
@@ -321,13 +407,14 @@ function AppointmentDetails({ appt, staff, pending, error, onStatus, onMove, onN
 
   return (
     <div className="space-y-4">
-      <div>
-        <Link href={`/customers/${appt.customer_id}`} className="text-lg font-semibold text-brand-700 hover:underline">
-          {appt.customer?.first_name} {appt.customer?.last_name}
-        </Link>
-        {appt.customer?.phone && <div className="text-sm text-stone-500">{formatPhone(appt.customer.phone)}</div>}
-      </div>
-      <dl className="grid grid-cols-2 gap-3 text-sm">
+      <Link href={`/customers/${appt.customer_id}`} className="flex items-center gap-3 rounded-2xl p-2 -m-2 hover:bg-stone-100">
+        <Avatar name={`${appt.customer?.first_name ?? ""} ${appt.customer?.last_name ?? ""}`} size={44} />
+        <div className="min-w-0">
+          <div className="truncate text-lg font-medium text-stone-900">{appt.customer?.first_name} {appt.customer?.last_name}</div>
+          {appt.customer?.phone && <div className="text-sm text-stone-500">{formatPhone(appt.customer.phone)}</div>}
+        </div>
+      </Link>
+      <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-stone-100 p-4 text-sm">
         <div><dt className="text-stone-500">{t("appointment.service")}</dt><dd className="font-medium">{appt.service?.name}</dd></div>
         <div><dt className="text-stone-500">{t("appointment.staff")}</dt><dd className="font-medium">{staff.find((s) => s.id === appt.staff_id)?.name}</dd></div>
         <div><dt className="text-stone-500">{t("appointment.when")}</dt><dd className="font-medium first-letter:uppercase">{dateTime(appt.start_at)}–{time(appt.end_at)}</dd></div>
@@ -337,23 +424,23 @@ function AppointmentDetails({ appt, staff, pending, error, onStatus, onMove, onN
       </dl>
 
       <div className="flex flex-wrap gap-2">
-        {appt.status === "scheduled" && <button className="btn-secondary btn-sm" disabled={pending} onClick={() => onStatus("confirmed")}>✓ {t("appointment.confirm")}</button>}
+        {appt.status === "scheduled" && <button className="btn-secondary btn-sm" disabled={pending} onClick={() => onStatus("confirmed")}><Icon name="check" size={16} />{t("appointment.confirm")}</button>}
         {active && <button className="btn-primary btn-sm" disabled={pending} onClick={() => onStatus("completed")}>{t("appointment.complete")}</button>}
         {active && <button className="btn-secondary btn-sm" disabled={pending} onClick={() => onStatus("no_show")}>{t("appointment.no_show")}</button>}
         {active && <button className="btn-secondary btn-sm" disabled={pending} onClick={() => setEditing(!editing)}>{t("appointment.reschedule")}</button>}
         {active && <button className="btn-danger btn-sm" disabled={pending} onClick={() => confirm(t("appointment.cancel_confirm")) && onStatus("cancelled")}>{t("appointment.cancel")}</button>}
         {!active && <button className="btn-secondary btn-sm" disabled={pending} onClick={() => onStatus("scheduled")}>{t("appointment.reopen")}</button>}
-        <button className="btn-secondary btn-sm" onClick={onRebook}>↻ {t("appointment.rebook")}</button>
+        <button className="btn-tonal btn-sm" onClick={onRebook}><Icon name="replay" size={16} />{t("appointment.rebook")}</button>
       </div>
 
       {appt.status === "completed" && (
-        <div className="rounded-xl bg-brand-50 p-3 text-sm text-brand-900">
-          {t("appointment.rebook_prompt")} <button className="font-semibold underline" onClick={onRebook}>{t("appointment.schedule_next")}</button>
+        <div className="rounded-2xl bg-brand-50 p-4 text-sm text-brand-900">
+          {t("appointment.rebook_prompt")} <button className="font-medium underline" onClick={onRebook}>{t("appointment.schedule_next")}</button>
         </div>
       )}
 
       {editing && (
-        <div className="space-y-3 rounded-xl bg-stone-50 p-3">
+        <div className="space-y-3 rounded-2xl bg-stone-100 p-4">
           <div className="grid grid-cols-2 gap-2">
             <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             <input className="input" type="time" step={300} value={hhmm} onChange={(e) => setHhmm(e.target.value)} />
@@ -374,7 +461,7 @@ function AppointmentDetails({ appt, staff, pending, error, onStatus, onMove, onN
         <textarea className="input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         {notes !== (appt.notes ?? "") && <button className="btn-secondary btn-sm mt-2" disabled={pending} onClick={() => onNotes(notes)}>{t("common.save")}</button>}
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-bad-700">{error}</p>}
     </div>
   );
 }

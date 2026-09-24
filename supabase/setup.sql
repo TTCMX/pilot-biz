@@ -1,5 +1,5 @@
 -- =====================================================================
--- Pilot Biz — full database setup (single pass)
+-- Adina — full database setup (single pass)
 -- Run this whole file once in Supabase → SQL Editor → New query → Run.
 -- It is idempotent: running it again is safe (it upgrades in place).
 -- =====================================================================

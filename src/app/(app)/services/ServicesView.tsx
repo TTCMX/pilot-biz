@@ -7,6 +7,7 @@ import { Modal } from "@/components/Modal";
 import { deleteService, saveService } from "@/app/actions/catalog";
 import type { MessageKey } from "@/lib/i18n";
 import type { Service } from "@/lib/types";
+import { Icon } from "@/components/Icon";
 
 type StaffLite = { id: string; name: string; color: string | null };
 
@@ -18,7 +19,7 @@ export function ServicesView({ services, staff, links, currency }: { services: S
     <div className="mx-auto max-w-4xl space-y-4">
       <div className="flex items-center gap-2">
         <h1 className="h1 mr-auto">{t("nav.services")}</h1>
-        <button className="btn-primary btn-sm" onClick={() => setEditing("new")}>+ {t("service.add")}</button>
+        <button className="btn-primary btn-sm" onClick={() => setEditing("new")}><Icon name="add" size={16} />{t("service.add")}</button>
       </div>
       {services.length === 0 && <div className="card muted text-center">{t("services.empty")}</div>}
       <ul className="space-y-2">
@@ -26,16 +27,18 @@ export function ServicesView({ services, staff, links, currency }: { services: S
           const who = links.filter((l) => l.service_id === s.id).map((l) => staff.find((st) => st.id === l.staff_id)?.name).filter(Boolean);
           return (
             <li key={s.id}>
-              <button className={`card flex w-full items-center gap-3 text-left hover:border-brand-200 ${s.active ? "" : "opacity-50"}`} onClick={() => setEditing(s)}>
+              <button className={`card flex w-full items-center gap-4 text-left transition-shadow hover:shadow-float ${s.active ? "" : "opacity-50"}`} onClick={() => setEditing(s)}>
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700"><Icon name="cut" size={20} /></span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold">{s.name} {!s.active && <span className="chip bg-stone-100 text-stone-500">{t("common.inactive")}</span>}</div>
+                  <div className="font-medium text-stone-900">{s.name} {!s.active && <span className="chip bg-stone-100 text-stone-500">{t("common.inactive")}</span>}</div>
                   <div className="text-sm text-stone-500">
                     {duration(s.duration_minutes)}
                     {s.buffer_minutes > 0 && ` + ${duration(s.buffer_minutes)} ${t("service.buffer_short")}`}
                     {staff.length > 1 && ` · ${who.length ? who.join(", ") : t("service.all_staff")}`}
                   </div>
                 </div>
-                <div className="font-semibold tabular-nums">{money(s.price, s.currency)}</div>
+                <div className="text-lg font-normal tabular-nums text-stone-900">{money(s.price, s.currency)}</div>
+                <Icon name="chevronRight" size={22} className="text-stone-400" />
               </button>
             </li>
           );
@@ -130,7 +133,7 @@ function ServiceForm({ service, staff, assigned, currency, onDone }: { service: 
         <input type="checkbox" name="active" className="accent-brand-600" defaultChecked={service?.active ?? true} />
         {t("service.active")}
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-bad-700">{error}</p>}
       <div className="flex gap-2">
         {service && (
           <button

@@ -10,6 +10,8 @@ import { saveWeeklyHours, type WeeklyHours } from "@/app/actions/onboarding";
 import { formatLocalDate, formatWallTime, weekdayName } from "@/lib/i18n/format";
 import type { MessageKey } from "@/lib/i18n";
 import type { Staff } from "@/lib/types";
+import { Icon } from "@/components/Icon";
+import { Avatar } from "@/components/Avatar";
 
 type Rule = { staff_id: string; day_of_week: number; start_time: string; end_time: string };
 type Exception = { id: string; staff_id: string | null; date: string; start_time: string | null; end_time: string | null; type: "time_off" | "custom_hours"; note: string | null };
@@ -39,9 +41,9 @@ export function StaffView({ staff, services, links, rules, exceptions, weekStart
     items.length ? (
       <ul className="mt-2 space-y-1">
         {items.map((e) => (
-          <li key={e.id} className="flex items-center justify-between gap-2 rounded-lg bg-stone-50 px-2.5 py-1.5 text-sm">
+          <li key={e.id} className="flex items-center justify-between gap-2 rounded-lg bg-stone-100 py-1 pl-3 pr-1 text-sm">
             <span className="first-letter:uppercase">{exceptionLabel(e)}</span>
-            <button className="text-xs text-red-600" disabled={pending} onClick={() => start(async () => { await deleteException(e.id); router.refresh(); })}>✕</button>
+            <button className="icon-btn size-7 text-stone-500" disabled={pending} onClick={() => start(async () => { await deleteException(e.id); router.refresh(); })} aria-label="delete"><Icon name="close" size={16} /></button>
           </li>
         ))}
       </ul>
@@ -51,14 +53,14 @@ export function StaffView({ staff, services, links, rules, exceptions, weekStart
     <div className="mx-auto max-w-4xl space-y-4">
       <div className="flex items-center gap-2">
         <h1 className="h1 mr-auto">{t("nav.staff")}</h1>
-        <button className="btn-primary btn-sm" onClick={() => setEditing("new")}>+ {t("staff.add")}</button>
+        <button className="btn-primary btn-sm" onClick={() => setEditing("new")}><Icon name="add" size={16} />{t("staff.add")}</button>
       </div>
 
       {staff.map((s) => (
         <div key={s.id} className={`card space-y-3 ${s.active ? "" : "opacity-60"}`}>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="size-3 rounded-full" style={{ background: s.color ?? "#db2777" }} />
-            <span className="mr-auto font-semibold">{s.name} {s.role && <span className="font-normal text-stone-500">· {s.role}</span>}</span>
+            <Avatar name={s.name} size={40} color={s.color} />
+            <span className="mr-auto font-medium">{s.name} {s.role && <span className="font-normal text-stone-500">· {s.role}</span>}</span>
             <button className="btn-secondary btn-sm" onClick={() => setEditing(s)}>{t("common.edit")}</button>
             <button className="btn-secondary btn-sm" onClick={() => setHoursFor(s)}>{t("staff.hours")}</button>
             <button className="btn-secondary btn-sm" onClick={() => setExceptionFor(s)}>{t("staff.add_exception")}</button>
@@ -76,7 +78,7 @@ export function StaffView({ staff, services, links, rules, exceptions, weekStart
       <div className="card">
         <div className="flex items-center gap-2">
           <h2 className="h2 mr-auto">{t("staff.business_closures")}</h2>
-          <button className="btn-secondary btn-sm" onClick={() => setExceptionFor("business")}>+ {t("staff.add_closure")}</button>
+          <button className="btn-secondary btn-sm" onClick={() => setExceptionFor("business")}><Icon name="add" size={16} />{t("staff.add_closure")}</button>
         </div>
         <p className="muted">{t("staff.business_closures_hint")}</p>
         <ExceptionList items={exceptions.filter((e) => e.staff_id === null)} />
@@ -130,7 +132,7 @@ function StaffForm({ staff, services, assigned, onDone }: { staff: Staff | null;
         </div>
         <div>
           <label className="label">{t("staff.color")}</label>
-          <input className="input h-[42px] w-16 p-1" type="color" name="color" defaultValue={staff?.color ?? "#db2777"} />
+          <input className="input h-[42px] w-16 p-1" type="color" name="color" defaultValue={staff?.color ?? "#1a73e8"} />
         </div>
       </div>
       <div>
@@ -164,7 +166,7 @@ function StaffForm({ staff, services, assigned, onDone }: { staff: Staff | null;
         <input type="checkbox" name="active" className="accent-brand-600" defaultChecked={staff?.active ?? true} />
         {t("staff.active")}
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-bad-700">{error}</p>}
       <button className="btn-primary w-full" disabled={pending}>{pending ? t("common.saving") : t("common.save")}</button>
     </form>
   );
@@ -178,7 +180,7 @@ function HoursForm({ staffId, initial, weekStart, onDone }: { staffId: string; i
   return (
     <div className="space-y-3">
       <WeeklyHoursEditor value={hours} onChange={setHours} weekStart={weekStart} />
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-bad-700">{error}</p>}
       <button
         className="btn-primary w-full"
         disabled={pending}
@@ -217,9 +219,10 @@ function ExceptionForm({ staffId, onDone }: { staffId: string | null; onDone: ()
       }
     >
       {staffId && (
-        <div className="flex rounded-xl border border-stone-300 p-0.5">
+        <div className="flex h-10 overflow-hidden rounded-full border border-stone-300">
           {(["time_off", "custom_hours"] as const).map((v) => (
-            <button type="button" key={v} onClick={() => setType(v)} className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium ${type === v ? "bg-brand-600 text-white" : ""}`}>
+            <button type="button" key={v} onClick={() => setType(v)} className={`flex flex-1 items-center justify-center gap-1.5 text-sm font-medium ${type === v ? "bg-nav text-nav-on" : "text-stone-700"}`}>
+              {type === v && <Icon name="check" size={16} />}
               {t(`exception.${v}`)}
             </button>
           ))}
@@ -251,7 +254,7 @@ function ExceptionForm({ staffId, onDone }: { staffId: string | null; onDone: ()
         <label className="label">{t("exception.note")}</label>
         <input className="input" name="note" placeholder={t("exception.note_placeholder")} />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-bad-700">{error}</p>}
       <button className="btn-primary w-full" disabled={pending}>{pending ? t("common.saving") : t("common.save")}</button>
     </form>
   );

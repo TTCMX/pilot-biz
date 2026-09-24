@@ -32,7 +32,7 @@ function layout(opts: { heading: string; intro: string; rows: [string, string][]
     )
     .join("");
   const cta = opts.cta
-    ? `<p style="margin:24px 0 8px"><a href="${escapeHtml(opts.cta.href)}" style="display:inline-block;background:#db2777;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:12px">${escapeHtml(opts.cta.label)}</a></p>`
+    ? `<p style="margin:24px 0 8px"><a href="${escapeHtml(opts.cta.href)}" style="display:inline-block;background:#0b57d0;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:999px">${escapeHtml(opts.cta.label)}</a></p>`
     : "";
   return `<!doctype html><html><body style="margin:0;background:#fafaf9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;padding:24px 12px"><tr><td align="center">
@@ -42,7 +42,7 @@ function layout(opts: { heading: string; intro: string; rows: [string, string][]
 <p style="margin:0 0 16px;font-size:15px;color:#44403c;line-height:1.5">${escapeHtml(opts.intro)}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f5f5f4;padding-top:8px">${rows}</table>
 ${cta}
-<p style="margin:16px 0 0;font-size:12px;color:#a8a29e;line-height:1.5">${escapeHtml(opts.footer)}</p>
+<p style="margin:16px 0 0;font-size:12px;color:#8e918f;line-height:1.5">${escapeHtml(opts.footer)}</p>
 </td></tr></table></td></tr></table></body></html>`;
 }
 

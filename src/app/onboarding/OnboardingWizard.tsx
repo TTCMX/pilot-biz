@@ -8,6 +8,7 @@ import { CsvImport } from "@/components/CsvImport";
 import { COUNTRIES } from "@/lib/i18n/countries";
 import { BUSINESS_TYPES, serviceTemplates } from "@/lib/templates";
 import type { MessageKey } from "@/lib/i18n";
+import { Icon, Logo, type IconName } from "@/components/Icon";
 import {
   completeOnboarding,
   createBusiness,
@@ -46,16 +47,16 @@ export function OnboardingWizard({ business, ownerName, appUrl, language }: Prop
   return (
     <div className="mx-auto min-h-dvh max-w-xl px-4 py-6 sm:py-10">
       <div className="mb-6 flex items-center justify-between">
-        <span className="text-xl font-bold text-brand-600">Pilot</span>
+        <Logo />
         <span className="text-xs font-medium text-stone-500">{t("onboarding.step", { current: step + 1, total: STEPS.length })}</span>
       </div>
       <div className="mb-6 flex gap-1.5">
         {STEPS.map((s, i) => (
-          <div key={s} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-brand-500" : "bg-stone-200"}`} />
+          <div key={s} className={`h-1 flex-1 rounded-full transition-colors ${i <= step ? "bg-brand-600" : "bg-stone-200"}`} />
         ))}
       </div>
 
-      {error && <p className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {error && <p className="mb-4 rounded-2xl bg-bad-100 p-4 text-sm text-bad-700">{error}</p>}
 
       {step === 0 && <BusinessStep pending={pending} language={language} onSubmit={(v) => run(() => createBusiness(v), 1)} />}
       {step === 1 && business && (
@@ -91,7 +92,7 @@ function StepHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="mb-5">
       <h1 className="h1">{title}</h1>
-      {subtitle && <p className="mt-1 text-stone-600">{subtitle}</p>}
+      {subtitle && <p className="mt-2 text-stone-600">{subtitle}</p>}
     </div>
   );
 }
@@ -138,8 +139,9 @@ function BusinessStep({ pending, language, onSubmit }: { pending: boolean; langu
               type="button"
               key={bt}
               onClick={() => setType(bt)}
-              className={`rounded-xl border px-2 py-2.5 text-sm font-medium ${type === bt ? "border-brand-500 bg-brand-50 text-brand-700" : "border-stone-200 bg-white"}`}
+              className={`flex h-10 items-center justify-center gap-1.5 rounded-lg border px-2 text-sm font-medium transition-colors ${type === bt ? "border-transparent bg-nav text-nav-on" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"}`}
             >
+              {type === bt && <Icon name="check" size={16} />}
               {t(`business_type.${bt}` as MessageKey)}
             </button>
           ))}
@@ -181,7 +183,7 @@ function ServicesStep({ pending, businessType, currency, onSubmit, onSkip }: {
       <StepHeader title={t("onboarding.services_title")} subtitle={t("onboarding.services_subtitle")} />
       <div className="space-y-3">
         {items.map((it, i) => (
-          <div key={i} className={`rounded-xl border p-3 ${it.on ? "border-stone-200" : "border-dashed border-stone-200 opacity-60"}`}>
+          <div key={i} className={`rounded-2xl p-4 transition-colors ${it.on ? "bg-stone-100" : "bg-stone-50 opacity-60"}`}>
             <div className="flex items-center gap-2">
               <input type="checkbox" className="size-4 accent-brand-600" checked={it.on} onChange={(e) => update(i, { on: e.target.checked })} />
               <input className="input flex-1" value={it.name} onChange={(e) => update(i, { name: e.target.value })} placeholder={t("service.name")} />
@@ -199,8 +201,9 @@ function ServicesStep({ pending, businessType, currency, onSubmit, onSkip }: {
           </div>
         ))}
       </div>
-      <button type="button" className="btn-ghost w-full" onClick={() => setItems([...items, { name: "", duration_minutes: 60, price: 0, on: true }])}>
-        + {t("service.add")}
+      <button type="button" className="btn-ghost" onClick={() => setItems([...items, { name: "", duration_minutes: 60, price: 0, on: true }])}>
+        <Icon name="add" size={18} />
+        {t("service.add")}
       </button>
       <p className="text-xs text-stone-500">{t("onboarding.services_example", { price: money(items[0]?.price ?? 0, currency) })}</p>
       <div className="flex gap-2">
@@ -241,14 +244,8 @@ function StaffStep({ pending, ownerName, onSubmit }: { pending: boolean; ownerNa
     <div className="card space-y-4">
       <StepHeader title={t("onboarding.staff_title")} subtitle={t("onboarding.staff_subtitle")} />
       <div className="grid grid-cols-2 gap-2">
-        <button className={`rounded-xl border p-4 text-left ${!team ? "border-brand-500 bg-brand-50" : "border-stone-200"}`} onClick={() => setTeam(false)}>
-          <div className="text-2xl">🙋‍♀️</div>
-          <div className="mt-1 font-semibold">{t("onboarding.work_alone")}</div>
-        </button>
-        <button className={`rounded-xl border p-4 text-left ${team ? "border-brand-500 bg-brand-50" : "border-stone-200"}`} onClick={() => setTeam(true)}>
-          <div className="text-2xl">👩‍👩‍👧</div>
-          <div className="mt-1 font-semibold">{t("onboarding.have_team")}</div>
-        </button>
+        <ChoiceCard active={!team} icon="person" label={t("onboarding.work_alone")} onClick={() => setTeam(false)} />
+        <ChoiceCard active={team} icon="group" label={t("onboarding.have_team")} onClick={() => setTeam(true)} />
       </div>
       {team && (
         <div className="space-y-3">
@@ -259,7 +256,7 @@ function StaffStep({ pending, ownerName, onSubmit }: { pending: boolean; ownerNa
           {members.map((m, i) => (
             <input key={i} className="input" placeholder={t("staff.name")} value={m} onChange={(e) => setMembers(members.map((x, j) => (j === i ? e.target.value : x)))} />
           ))}
-          <button className="btn-ghost w-full" onClick={() => setMembers([...members, ""])}>+ {t("staff.add")}</button>
+          <button className="btn-ghost" onClick={() => setMembers([...members, ""])}><Icon name="add" size={18} />{t("staff.add")}</button>
           <p className="text-xs text-stone-500">{t("onboarding.staff_hint")}</p>
         </div>
       )}
@@ -282,8 +279,8 @@ function CustomersStep({ onNext }: { onNext: () => void }) {
       <StepHeader title={t("onboarding.customers_title")} subtitle={t("onboarding.customers_subtitle")} />
       {mode === "choose" ? (
         <div className="space-y-2">
-          <button className="btn-secondary w-full justify-start" onClick={() => setMode("import")}>📄 {t("onboarding.import_csv")}</button>
-          <button className="btn-secondary w-full justify-start" onClick={onNext}>✨ {t("onboarding.start_from_zero")}</button>
+          <ChoiceRow icon="upload" label={t("onboarding.import_csv")} onClick={() => setMode("import")} />
+          <ChoiceRow icon="sparkle" label={t("onboarding.start_from_zero")} onClick={onNext} />
           <button className="btn-ghost w-full" onClick={onNext}>{t("common.skip")}</button>
         </div>
       ) : (
@@ -302,8 +299,10 @@ function ReadyStep({ url, pending, onFinish }: { url: string; pending: boolean; 
   return (
     <div className="space-y-4">
       <div className="card">
-        <StepHeader title={`🎉 ${t("onboarding.ready_title")}`} subtitle={t("onboarding.ready_subtitle")} />
-        <div className="flex items-center gap-2 rounded-xl bg-stone-100 p-3">
+        <span className="mb-4 flex size-14 items-center justify-center rounded-full bg-ok-100 text-ok-700"><Icon name="check" size={30} /></span>
+        <StepHeader title={t("onboarding.ready_title")} subtitle={t("onboarding.ready_subtitle")} />
+        <div className="flex items-center gap-2 rounded-2xl bg-stone-100 py-2 pl-4 pr-2">
+          <Icon name="link" size={20} className="text-stone-500" />
           <span className="flex-1 truncate font-mono text-sm">{url}</span>
           <button
             className="btn-secondary btn-sm"
@@ -316,16 +315,40 @@ function ReadyStep({ url, pending, onFinish }: { url: string; pending: boolean; 
           </button>
         </div>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <a className="btn-primary" href={`${url}?test=1`} target="_blank" rel="noreferrer">🧪 {t("booking_page.test_booking")}</a>
-          <a className="btn-secondary" href={url} target="_blank" rel="noreferrer">{t("booking_page.view")}</a>
+          <a className="btn-primary" href={`${url}?test=1`} target="_blank" rel="noreferrer"><Icon name="science" size={18} />{t("booking_page.test_booking")}</a>
+          <a className="btn-secondary" href={url} target="_blank" rel="noreferrer"><Icon name="openInNew" size={18} />{t("booking_page.view")}</a>
         </div>
         <p className="mt-3 text-xs text-stone-500">{t("onboarding.test_hint")}</p>
       </div>
-      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-        <div className="border-b border-stone-200 px-4 py-2 text-xs font-medium text-stone-500">{t("booking_page.preview")}</div>
+      <div className="overflow-hidden rounded-3xl bg-white shadow-card">
+        <div className="border-b border-stone-100 px-5 py-3 text-xs font-medium text-stone-500">{t("booking_page.preview")}</div>
         <iframe src={url} className="h-[520px] w-full" title="preview" />
       </div>
       <button className="btn-primary w-full" disabled={pending} onClick={onFinish}>{t("onboarding.go_dashboard")}</button>
     </div>
+  );
+}
+
+function ChoiceCard({ active, icon, label, onClick }: { active: boolean; icon: IconName; label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${active ? "border-transparent bg-nav text-nav-on" : "border-stone-300 bg-white hover:bg-stone-50"}`}
+    >
+      <span className={`flex size-10 items-center justify-center rounded-full ${active ? "bg-white/70" : "bg-stone-100 text-stone-600"}`}>
+        <Icon name={icon} size={22} />
+      </span>
+      <span className="font-medium">{label}</span>
+    </button>
+  );
+}
+
+function ChoiceRow({ icon, label, onClick }: { icon: IconName; label: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex w-full items-center gap-4 rounded-2xl bg-stone-100 p-4 text-left font-medium text-stone-800 transition-colors hover:bg-stone-200">
+      <span className="flex size-10 items-center justify-center rounded-full bg-white text-brand-600"><Icon name={icon} size={22} /></span>
+      <span className="flex-1">{label}</span>
+      <Icon name="chevronRight" size={22} className="text-stone-400" />
+    </button>
   );
 }

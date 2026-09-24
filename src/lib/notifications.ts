@@ -8,6 +8,7 @@ import { env } from "@/lib/env";
 import { isEmailEnabled, sendEmail } from "@/lib/email/send";
 import { customerEmail, ownerEmail, ownerWaitlistEmail, type CustomerEmailKind, type OwnerEmailKind } from "@/lib/email/templates";
 import { customerName, type Business } from "@/lib/types";
+import { APP_NAME } from "@/lib/brand";
 
 // Email notifications run after the response is sent, so they never slow down
 // or break a booking. Messages are informational; nothing is sent to WhatsApp/SMS.
@@ -68,7 +69,7 @@ async function sendAppointmentEmails(event: AppointmentEvent, appointmentId: str
       },
       t,
     );
-    jobs.push(sendEmail({ to: owners, ...content, fromName: "Pilot", replyTo: customer.email }));
+    jobs.push(sendEmail({ to: owners, ...content, fromName: APP_NAME, replyTo: customer.email }));
   }
   await Promise.all(jobs);
 }
@@ -103,7 +104,7 @@ async function sendWaitlistEmail(entryId: string) {
     },
     t,
   );
-  await sendEmail({ to: owners, ...content, fromName: "Pilot" });
+  await sendEmail({ to: owners, ...content, fromName: APP_NAME });
 }
 
 /** Schedule appointment emails (customer + owners) after the response. */

@@ -7,6 +7,8 @@ import { useI18n } from "@/components/I18nProvider";
 import { createPublicBooking, joinPublicWaitlist } from "@/app/actions/public";
 import type { PublicCatalog } from "@/lib/booking/public";
 import type { MessageKey } from "@/lib/i18n";
+import { Icon } from "@/components/Icon";
+import { Avatar } from "@/components/Avatar";
 
 type Step = "service" | "staff" | "time" | "details";
 type DaySlots = { date: string; slots: { start: string; end: string }[] };
@@ -57,36 +59,45 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
   if (!services.length) return <p className="p-6 text-center text-stone-500">{t("booking.no_services")}</p>;
 
   return (
-    <div className="px-4 pb-10 pt-4">
-      {isTest && <p className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">🧪 {t("booking.test_banner")}</p>}
+    <div className="px-4 pb-10 pt-5 sm:px-6">
+      {isTest && (
+        <p className="mb-4 flex gap-3 rounded-2xl bg-warn-100 p-4 text-sm text-warn-700">
+          <Icon name="science" size={20} />
+          {t("booking.test_banner")}
+        </p>
+      )}
       {step !== "service" && (
-        <button className="mb-3 text-sm font-medium text-stone-500" onClick={back}>← {t("common.back")}</button>
+        <button className="btn-ghost -ml-3 mb-2" onClick={back}><Icon name="back" size={18} />{t("common.back")}</button>
       )}
 
       {step !== "service" && service && (
-        <div className="mb-4 rounded-2xl bg-stone-50 p-3 text-sm">
-          <div className="font-semibold">{service.name}</div>
-          <div className="text-stone-500">
+        <div className="mb-5 flex gap-3 rounded-2xl bg-brand-50 p-4 text-sm">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700"><Icon name="cut" size={20} /></span>
+          <div className="min-w-0">
+          <div className="font-medium text-stone-900">{service.name}</div>
+          <div className="text-stone-600">
             {duration(service.duration_minutes)} · {money(service.price, service.currency)}
             {step !== "staff" && eligible.length > 1 && ` · ${staff.find((s) => s.id === staffId)?.name ?? t("booking.any_staff")}`}
           </div>
           {slot && step === "details" && <SlotLabel iso={slot} />}
+          </div>
         </div>
       )}
 
       {step === "service" && (
         <section>
-          <h2 className="mb-3 text-xl font-bold">{t("booking.select_service")}</h2>
-          <ul className="space-y-2">
+          <h2 className="mb-4 text-[22px] font-normal text-stone-900">{t("booking.select_service")}</h2>
+          <ul className="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200">
             {services.map((s) => (
               <li key={s.id}>
-                <button onClick={() => chooseService(s.id)} className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-left active:bg-stone-50 hover:border-brand-300">
+                <button onClick={() => chooseService(s.id)} className="flex w-full items-center gap-4 bg-white p-4 text-left transition-colors hover:bg-brand-50 active:bg-brand-100">
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold">{s.name}</div>
+                    <div className="font-medium text-stone-900">{s.name}</div>
                     {s.description && <div className="line-clamp-2 text-sm text-stone-500">{s.description}</div>}
-                    <div className="mt-0.5 text-sm text-stone-500">{duration(s.duration_minutes)}</div>
+                    <div className="mt-1 flex items-center gap-1 text-sm text-stone-500"><Icon name="schedule" size={16} />{duration(s.duration_minutes)}</div>
                   </div>
-                  <div className="font-semibold tabular-nums">{money(s.price, s.currency)}</div>
+                  <div className="font-medium tabular-nums text-stone-900">{money(s.price, s.currency)}</div>
+                  <Icon name="chevronRight" size={22} className="text-stone-400" />
                 </button>
               </li>
             ))}
@@ -96,18 +107,21 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
 
       {step === "staff" && (
         <section>
-          <h2 className="mb-3 text-xl font-bold">{t("booking.select_staff")}</h2>
-          <ul className="space-y-2">
+          <h2 className="mb-4 text-[22px] font-normal text-stone-900">{t("booking.select_staff")}</h2>
+          <ul className="divide-y divide-stone-100 overflow-hidden rounded-2xl border border-stone-200">
             {[{ id: null as string | null, name: t("booking.any_staff"), color: null as string | null }, ...eligible].map((s) => (
               <li key={s.id ?? "any"}>
                 <button
                   onClick={() => { setStaffId(s.id); setSlot(null); setStep("time"); }}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 text-left hover:border-brand-300"
+                  className="flex w-full items-center gap-4 bg-white p-4 text-left transition-colors hover:bg-brand-50"
                 >
-                  <span className="flex size-10 items-center justify-center rounded-full text-lg font-bold text-white" style={{ background: s.color ?? "#a8a29e" }}>
-                    {s.id ? s.name[0] : "✨"}
-                  </span>
-                  <span className="font-semibold">{s.name}</span>
+                  {s.id ? (
+                    <Avatar name={s.name} size={40} color={s.color} />
+                  ) : (
+                    <span className="flex size-10 items-center justify-center rounded-full bg-brand-100 text-brand-700"><Icon name="sparkle" size={20} /></span>
+                  )}
+                  <span className="flex-1 font-medium text-stone-900">{s.name}</span>
+                  <Icon name="chevronRight" size={22} className="text-stone-400" />
                 </button>
               </li>
             ))}
@@ -117,7 +131,7 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
 
       {step === "time" && serviceId && (
         <section>
-          <h2 className="mb-3 text-xl font-bold">{t("booking.select_time")}</h2>
+          <h2 className="mb-4 text-[22px] font-normal text-stone-900">{t("booking.select_time")}</h2>
           <SlotPicker
             slug={slug}
             serviceId={serviceId}
@@ -149,7 +163,7 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
 
 function SlotLabel({ iso }: { iso: string }) {
   const { date, time } = useI18n();
-  return <div className="mt-1 font-medium first-letter:uppercase text-brand-700">📅 {date(iso, { weekday: "long", day: "numeric", month: "long" })} · {time(iso)}</div>;
+  return <div className="mt-1 font-medium text-brand-700 first-letter:uppercase">{date(iso, { weekday: "long", day: "numeric", month: "long" })} · {time(iso)}</div>;
 }
 
 /** Date strip + time grid, backed by the public availability API. */
@@ -197,9 +211,9 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <button className="btn-ghost btn-sm" disabled={from <= today} onClick={() => setFrom(DateTime.fromISO(from).minus({ days: 14 }).toISODate()! < today ? today : DateTime.fromISO(from).minus({ days: 14 }).toISODate()!)}>‹</button>
-        <span className="text-sm font-medium capitalize text-stone-600">{DateTime.fromISO(selectedDate ?? from).setLocale(locale).toFormat("LLLL yyyy")}</span>
-        <button className="btn-ghost btn-sm" onClick={() => setFrom(DateTime.fromISO(from).plus({ days: 14 }).toISODate()!)}>›</button>
+        <button className="icon-btn" disabled={from <= today} onClick={() => setFrom(DateTime.fromISO(from).minus({ days: 14 }).toISODate()! < today ? today : DateTime.fromISO(from).minus({ days: 14 }).toISODate()!)} aria-label="prev"><Icon name="chevronLeft" size={22} /></button>
+        <span className="text-base font-medium capitalize text-stone-800">{DateTime.fromISO(selectedDate ?? from).setLocale(locale).toFormat("LLLL yyyy")}</span>
+        <button className="icon-btn" onClick={() => setFrom(DateTime.fromISO(from).plus({ days: 14 }).toISODate()!)} aria-label="next"><Icon name="chevronRight" size={22} /></button>
       </div>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
         {(days ?? Array.from({ length: 7 }, (_, i) => ({ date: DateTime.fromISO(from).plus({ days: i }).toISODate()!, slots: [] }))).map((d) => {
@@ -211,12 +225,12 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
               onClick={() => setSelectedDate(d.date)}
               disabled={!days}
               className={`flex w-14 shrink-0 flex-col items-center rounded-2xl border py-2 ${
-                selectedDate === d.date ? "border-brand-500 bg-brand-600 text-white" : has ? "border-stone-200 bg-white" : "border-stone-100 bg-stone-50 text-stone-400"
+                selectedDate === d.date ? "border-brand-600 bg-brand-600 text-white" : has ? "border-stone-300 bg-white text-stone-800 hover:bg-brand-50" : "border-stone-200 bg-stone-50 text-stone-400"
               }`}
             >
               <span className="text-[11px] uppercase">{dt.toFormat("ccc")}</span>
-              <span className="text-lg font-bold">{dt.day}</span>
-              <span className={`mt-0.5 size-1.5 rounded-full ${has ? (selectedDate === d.date ? "bg-white" : "bg-green-500") : "bg-transparent"}`} />
+              <span className="text-lg font-medium">{dt.day}</span>
+              <span className={`mt-0.5 size-1.5 rounded-full ${has ? (selectedDate === d.date ? "bg-white" : "bg-[#34a853]") : "bg-transparent"}`} />
             </button>
           );
         })}
@@ -228,13 +242,13 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
         ) : periods.length ? (
           periods.map((p) => (
             <div key={p.key} className="mb-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-400">{t(`booking.${p.key}`)}</h3>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">{t(`booking.${p.key}`)}</h3>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {p.slots.map((s) => (
                   <button
                     key={s.start}
                     onClick={() => onChange(s.start)}
-                    className={`rounded-xl border py-2.5 text-sm font-semibold tabular-nums ${value === s.start ? "border-brand-500 bg-brand-600 text-white" : "border-stone-200 bg-white hover:border-brand-400"}`}
+                    className={`h-11 rounded-lg border text-sm font-medium tabular-nums transition-colors ${value === s.start ? "border-brand-600 bg-brand-600 text-white" : "border-stone-300 bg-white text-brand-700 hover:border-brand-600 hover:bg-brand-50"}`}
                   >
                     {time(s.start)}
                   </button>
@@ -246,7 +260,7 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
           <div className="py-4 text-center">
             <p className="text-sm text-stone-500">{t("booking.no_times")}</p>
             {days.some((d) => d.slots.length) && (
-              <button className="mt-2 text-sm font-semibold text-brand-600" onClick={() => setSelectedDate(days.find((d) => d.slots.length)!.date)}>
+              <button className="btn-ghost mt-2" onClick={() => setSelectedDate(days.find((d) => d.slots.length)!.date)}>
                 {t("booking.first_available")}
               </button>
             )}
@@ -282,7 +296,7 @@ function DetailsForm({ onSubmit, submitLabel, compact }: { onSubmit: (c: Contact
         })
       }
     >
-      {!compact && <h2 className="text-xl font-bold">{t("booking.your_details")}</h2>}
+      {!compact && <h2 className="text-[22px] font-normal text-stone-900">{t("booking.your_details")}</h2>}
       <div className="grid grid-cols-2 gap-2">
         <input className="input" name="first_name" placeholder={t("customer.first_name")} autoComplete="given-name" required />
         <input className="input" name="last_name" placeholder={t("customer.last_name")} autoComplete="family-name" />
@@ -291,8 +305,8 @@ function DetailsForm({ onSubmit, submitLabel, compact }: { onSubmit: (c: Contact
       {!compact && <input className="input" name="email" type="email" placeholder={t("booking.email_placeholder")} autoComplete="email" />}
       {!compact && <textarea className="input" name="notes" rows={2} placeholder={`${t("booking.notes_placeholder")} (${t("common.optional")})`} />}
       <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button className="btn-primary w-full py-3 text-base" disabled={pending}>{pending ? t("common.loading") : submitLabel}</button>
+      {error && <p className="text-sm text-bad-700">{error}</p>}
+      <button className="btn-primary h-12 w-full text-base" disabled={pending}>{pending ? t("common.loading") : submitLabel}</button>
       {!compact && <p className="text-center text-xs text-stone-400">{t("booking.no_account_needed")}</p>}
     </form>
   );
@@ -305,15 +319,15 @@ function WaitlistForm({ slug, serviceId, staffId, date }: { slug: string; servic
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
-  if (done) return <p className="mt-4 rounded-xl bg-green-50 p-3 text-sm text-green-800">✓ {t("booking.waitlist_joined")}</p>;
+  if (done) return <p className="mt-4 flex items-center gap-2 rounded-2xl bg-ok-100 p-4 text-sm text-ok-700"><Icon name="check" size={18} />{t("booking.waitlist_joined")}</p>;
   if (!open)
     return (
       <button className="btn-secondary mt-4" onClick={() => setOpen(true)}>
-        ⏳ {t("booking.join_waitlist")}
+        <Icon name="hourglass" size={18} />{t("booking.join_waitlist")}
       </button>
     );
   return (
-    <div className="mt-4 space-y-3 rounded-2xl bg-stone-50 p-4 text-left">
+    <div className="mt-4 space-y-3 rounded-2xl bg-stone-100 p-4 text-left">
       <p className="text-sm font-medium first-letter:uppercase">{t("booking.waitlist_for", { date: DateTime.fromISO(date).setLocale(locale).toFormat("cccc d LLLL") })}</p>
       <div className="grid grid-cols-2 gap-2">
         <label className="text-xs text-stone-500">{t("waitlist.from")}<input className="input mt-1" type="time" value={from} onChange={(e) => setFrom(e.target.value)} /></label>
