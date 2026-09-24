@@ -8,6 +8,7 @@ import { openSpots, typicalDuration } from "@/lib/metrics/capacity";
 import { periodBounds, revenueSummary, type Period } from "@/lib/metrics/revenue";
 import { customerName, type AppointmentStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Icon, type IconName } from "@/components/Icon";
 
 export const metadata = { title: "Dashboard" };
 
@@ -80,88 +81,107 @@ export default async function DashboardPage() {
   const newBookings = (recent.data ?? []) as unknown as Row[];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <header>
-        <h1 className="h1">{greeting}{firstName ? `, ${firstName}` : ""} 👋</h1>
-        <p className="muted first-letter:uppercase">{formatDate(nowIso, f, { weekday: "long", day: "numeric", month: "long" })}</p>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header className="pt-2">
+        <h1 className="h1">{greeting}{firstName ? `, ${firstName}` : ""}</h1>
+        <p className="mt-1 text-stone-500 first-letter:uppercase">{formatDate(nowIso, f, { weekday: "long", day: "numeric", month: "long" })}</p>
       </header>
 
       {newBookings.length > 0 && (
-        <section className="rounded-2xl border border-green-200 bg-green-50 p-4">
-          <h2 className="font-semibold text-green-900">🎉 {t("dashboard.new_bookings", { count: newBookings.length })}</h2>
-          <ul className="mt-2 space-y-1 text-sm text-green-900">
-            {newBookings.map((b) => (
-              <li key={b.id}>
-                <Link href={`/customers/${b.customer?.id}`} className="font-medium underline-offset-2 hover:underline">{customerName(b.customer)}</Link>
-                {" · "}{b.service?.name}{" · "}{formatDate(b.start_at, f)} {formatTime(b.start_at, f)}
-              </li>
-            ))}
-          </ul>
+        <section className="flex gap-4 rounded-3xl bg-ok-100 p-5 text-ok-700">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/70">
+            <Icon name="eventAvailable" size={22} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-medium">{t("dashboard.new_bookings", { count: newBookings.length })}</h2>
+            <ul className="mt-1 space-y-0.5 text-sm">
+              {newBookings.map((b) => (
+                <li key={b.id} className="truncate">
+                  <Link href={`/customers/${b.customer?.id}`} className="font-medium underline-offset-2 hover:underline">{customerName(b.customer)}</Link>
+                  {" · "}{b.service?.name}{" · "}{formatDate(b.start_at, f)} {formatTime(b.start_at, f)}
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
       )}
 
       <section>
-        <h2 className="h2 mb-3">{t("dashboard.today")}</h2>
+        <h2 className="mb-3 text-sm font-medium text-stone-500">{t("dashboard.today")}</h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Stat label={t("dashboard.appointments")} value={String(activeToday.length)} href="/calendar" />
-          <Stat label={t("dashboard.booked_today")} value={money(bookedToday)} />
-          <Stat label={t("dashboard.open_spots")} value={String(spots)} hint={t("dashboard.open_spots_hint", { minutes: typicalDuration(bookingData) })} href="/calendar" />
-          <Stat label={t("dashboard.cancellations")} value={String(cancelledToday)} />
+          <Stat icon="calendar" tone="blue" label={t("dashboard.appointments")} value={String(activeToday.length)} href="/calendar" />
+          <Stat icon="money" tone="green" label={t("dashboard.booked_today")} value={money(bookedToday)} />
+          <Stat icon="eventAvailable" tone="yellow" label={t("dashboard.open_spots")} value={String(spots)} hint={t("dashboard.open_spots_hint", { minutes: typicalDuration(bookingData) })} href="/calendar" />
+          <Stat icon="eventBusy" tone="red" label={t("dashboard.cancellations")} value={String(cancelledToday)} />
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="card">
-          <h2 className="h2 mb-3">{t("dashboard.next_appointment")}</h2>
+      <div className="grid gap-6 lg:grid-cols-5">
+        <section className="card lg:col-span-3">
+          <h2 className="h2 mb-4">{t("dashboard.next_appointment")}</h2>
           {next ? (
-            <Link href={`/calendar?date=${localDateOf(next.start_at, business.timezone)}`} className="block rounded-xl bg-brand-50 p-4 hover:bg-brand-100">
-              <div className="text-lg font-semibold">{customerName(next.customer)}</div>
-              <div className="text-stone-700">{next.service?.name}</div>
-              <div className="mt-1 text-sm text-stone-600">
-                {localDateOf(next.start_at, business.timezone) !== today && `${formatDate(next.start_at, f)} · `}
-                {formatTime(next.start_at, f)}–{formatTime(next.end_at, f)} · {next.staff?.name}
+            <Link href={`/calendar?date=${localDateOf(next.start_at, business.timezone)}`} className="flex items-center gap-4 rounded-2xl bg-brand-50 p-4 transition-colors hover:bg-brand-100">
+              <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-brand-600 text-lg font-medium text-white">
+                {(next.customer?.first_name ?? "?")[0]}
+              </span>
+              <div className="min-w-0">
+                <div className="truncate text-lg font-medium text-stone-900">{customerName(next.customer)}</div>
+                <div className="truncate text-sm text-stone-600">
+                  {next.service?.name} · {next.staff?.name}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-brand-700">
+                  <Icon name="schedule" size={16} />
+                  {localDateOf(next.start_at, business.timezone) !== today && `${formatDate(next.start_at, f)} · `}
+                  {formatTime(next.start_at, f)}–{formatTime(next.end_at, f)}
+                </div>
               </div>
             </Link>
           ) : (
             <p className="muted">{t("dashboard.no_upcoming")}</p>
           )}
-          <h3 className="mb-2 mt-5 text-sm font-semibold text-stone-600">{t("dashboard.todays_schedule")}</h3>
+          <h3 className="mb-1 mt-6 text-sm font-medium text-stone-500">{t("dashboard.todays_schedule")}</h3>
           {activeToday.length ? (
             <ul className="divide-y divide-stone-100">
               {activeToday.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-2 py-2 text-sm">
-                  <span className="w-20 shrink-0 font-medium tabular-nums">{formatTime(a.start_at, f)}</span>
-                  <span className="min-w-0 flex-1 truncate">{customerName(a.customer)} · {a.service?.name}</span>
+                <li key={a.id} className="flex items-center gap-3 py-3 text-sm">
+                  <span className="w-20 shrink-0 font-medium tabular-nums text-stone-900">{formatTime(a.start_at, f)}</span>
+                  <span className="min-w-0 flex-1 truncate text-stone-700">{customerName(a.customer)} · {a.service?.name}</span>
                   <StatusBadge status={a.status} />
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="muted">{t("dashboard.empty_today")}</p>
+            <p className="muted py-3">{t("dashboard.empty_today")}</p>
           )}
         </section>
 
-        <div className="space-y-6">
+        <div className="space-y-6 lg:col-span-2">
           <section className="card">
-            <h2 className="h2 mb-3">{t("dashboard.quick_actions")}</h2>
+            <h2 className="h2 mb-4">{t("dashboard.quick_actions")}</h2>
             <div className="grid grid-cols-2 gap-2">
-              <Link href="/calendar?new=1" className="btn-primary">+ {t("dashboard.new_appointment")}</Link>
-              <Link href="/customers?new=1" className="btn-secondary">+ {t("dashboard.new_customer")}</Link>
-              <Link href="/calendar" className="btn-secondary">{t("dashboard.view_calendar")}</Link>
-              <Link href="/customers" className="btn-secondary">{t("dashboard.view_customers")}</Link>
+              <QuickAction href="/calendar?new=1" icon="add" label={t("dashboard.new_appointment")} primary />
+              <QuickAction href="/customers?new=1" icon="personAdd" label={t("dashboard.new_customer")} />
+              <QuickAction href="/calendar" icon="calendar" label={t("dashboard.view_calendar")} />
+              <QuickAction href="/customers" icon="group" label={t("dashboard.view_customers")} />
             </div>
             {(waitlist.count ?? 0) > 0 && (
-              <Link href="/waitlist" className="mt-3 block rounded-xl bg-amber-50 p-3 text-sm text-amber-900 hover:bg-amber-100">
-                ⏳ {t("dashboard.waitlist_count", { count: waitlist.count ?? 0 })}
+              <Link href="/waitlist" className="mt-3 flex items-center gap-3 rounded-2xl bg-warn-100 p-3 text-sm font-medium text-warn-700 hover:brightness-95">
+                <Icon name="hourglass" size={20} />
+                {t("dashboard.waitlist_count", { count: waitlist.count ?? 0 })}
               </Link>
             )}
           </section>
 
           <section className="card">
-            <h2 className="h2 mb-3">{t("dashboard.revenue")}</h2>
+            <div className="mb-4 flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+                <Icon name="trending" size={18} />
+              </span>
+              <h2 className="h2">{t("dashboard.revenue")}</h2>
+            </div>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-stone-500">
+                <tr className="text-left text-xs text-stone-500">
                   <th className="pb-2 font-medium"></th>
                   <th className="pb-2 text-right font-medium">{t("revenue.booked")}</th>
                   <th className="pb-2 text-right font-medium">{t("revenue.completed")}</th>
@@ -170,14 +190,14 @@ export default async function DashboardPage() {
               <tbody className="divide-y divide-stone-100">
                 {periods.map((p) => (
                   <tr key={p}>
-                    <td className="py-2 font-medium">{t(`revenue.${p}`)}</td>
-                    <td className="py-2 text-right tabular-nums">{money(revenue[p].booked)}</td>
-                    <td className="py-2 text-right tabular-nums">{money(revenue[p].completed)}</td>
+                    <td className="py-2.5 text-stone-700">{t(`revenue.${p}`)}</td>
+                    <td className="py-2.5 text-right font-medium tabular-nums text-stone-900">{money(revenue[p].booked)}</td>
+                    <td className="py-2.5 text-right font-medium tabular-nums text-ok-700">{money(revenue[p].completed)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <p className="mt-2 text-xs text-stone-500">{t("revenue.explanation")}</p>
+            <p className="mt-3 text-xs text-stone-500">{t("revenue.explanation")}</p>
           </section>
         </div>
       </div>
@@ -185,13 +205,41 @@ export default async function DashboardPage() {
   );
 }
 
-function Stat({ label, value, hint, href }: { label: string; value: string; hint?: string; href?: string }) {
+const TONES = {
+  blue: "bg-brand-100 text-brand-700",
+  green: "bg-ok-100 text-ok-700",
+  yellow: "bg-warn-100 text-warn-700",
+  red: "bg-bad-100 text-bad-700",
+} as const;
+
+function Stat({ icon, tone, label, value, hint, href }: { icon: IconName; tone: keyof typeof TONES; label: string; value: string; hint?: string; href?: string }) {
   const body = (
     <>
-      <div className="text-2xl font-bold tabular-nums sm:text-3xl">{value}</div>
-      <div className="mt-1 text-sm text-stone-600">{label}</div>
+      <span className={`flex size-10 items-center justify-center rounded-full ${TONES[tone]}`}>
+        <Icon name={icon} size={22} />
+      </span>
+      <div className="mt-4 text-[28px] font-normal leading-none tabular-nums text-stone-900">{value}</div>
+      <div className="mt-1.5 text-sm text-stone-600">{label}</div>
       {hint && <div className="text-xs text-stone-400">{hint}</div>}
     </>
   );
-  return href ? <Link href={href} className="card block hover:border-brand-200">{body}</Link> : <div className="card">{body}</div>;
+  return href ? (
+    <Link href={href} className="card block transition-shadow hover:shadow-float">{body}</Link>
+  ) : (
+    <div className="card">{body}</div>
+  );
+}
+
+function QuickAction({ href, icon, label, primary }: { href: string; icon: IconName; label: string; primary?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`flex flex-col items-start gap-3 rounded-2xl p-4 text-sm font-medium transition-colors ${
+        primary ? "bg-brand-600 text-white hover:bg-brand-700" : "bg-stone-100 text-stone-800 hover:bg-stone-200"
+      }`}
+    >
+      <Icon name={icon} size={22} />
+      {label}
+    </Link>
+  );
 }

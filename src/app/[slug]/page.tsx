@@ -14,7 +14,7 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
   const business = (await getPublicBusiness(slug))!;
   const catalog = await getPublicCatalog(business.id);
   return (
-    <div className="sm:overflow-hidden sm:rounded-3xl sm:border sm:border-stone-200 sm:bg-white sm:shadow-sm">
+    <div className="min-h-dvh bg-white sm:min-h-0 sm:overflow-hidden sm:rounded-[28px] sm:shadow-card">
       <BusinessHeader business={business} />
       <BookingFlow
         slug={slug}

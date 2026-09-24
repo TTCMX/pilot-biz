@@ -12,6 +12,8 @@ import { setAppointmentStatus } from "@/app/actions/appointments";
 import { formatPhone, whatsappLink } from "@/lib/phone";
 import { localDateOf } from "@/lib/i18n/format";
 import type { AppointmentStatus, Customer, CustomerStats } from "@/lib/types";
+import { Icon, type IconName } from "@/components/Icon";
+import { Avatar } from "@/components/Avatar";
 
 export type HistoryRow = {
   id: string; start_at: string; end_at: string; status: AppointmentStatus; price: number; currency: string;
@@ -35,44 +37,45 @@ export function CustomerProfile({ customer, stats, history, intervalDays, daysSi
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <Link href="/customers" className="text-sm text-stone-500">← {t("nav.customers")}</Link>
-      <div className="flex flex-wrap items-start gap-3">
-        <div className="mr-auto">
+      <Link href="/customers" className="btn-ghost -ml-3"><Icon name="back" size={18} />{t("nav.customers")}</Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <Avatar name={`${customer.first_name} ${customer.last_name ?? ""}`} size={56} />
+        <div className="mr-auto min-w-0">
           <h1 className="h1">{customer.first_name} {customer.last_name}</h1>
           <p className="muted">{[formatPhone(customer.phone), customer.email].filter(Boolean).join(" · ")}</p>
         </div>
-        <button className="btn-secondary btn-sm" onClick={() => setEditing(true)}>{t("common.edit")}</button>
-        <Link href={`/calendar?new=1&customer=${customer.id}`} className="btn-secondary btn-sm">+ {t("dashboard.new_appointment")}</Link>
-        <Link href={rebookHref} className="btn-primary btn-sm">↻ {t("customer.schedule_next")}</Link>
+        <button className="btn-secondary btn-sm" onClick={() => setEditing(true)}><Icon name="edit" size={16} />{t("common.edit")}</button>
+        <Link href={`/calendar?new=1&customer=${customer.id}`} className="btn-secondary btn-sm"><Icon name="add" size={16} />{t("dashboard.new_appointment")}</Link>
+        <Link href={rebookHref} className="btn-primary btn-sm"><Icon name="replay" size={16} />{t("customer.schedule_next")}</Link>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label={t("customer.visit_count")} value={String(stats?.visit_count ?? 0)} />
-        <Stat label={t("customer.total_spend")} value={money(Number(stats?.total_spend ?? 0))} />
-        <Stat label={t("customer.average_ticket")} value={stats?.visit_count ? money(Number(stats.average_ticket)) : "—"} />
-        <Stat label={t("customer.frequency")} value={intervalDays ? t("customer.every_days", { days: intervalDays }) : "—"} />
+        <Stat icon="eventAvailable" tone="bg-brand-100 text-brand-700" label={t("customer.visit_count")} value={String(stats?.visit_count ?? 0)} />
+        <Stat icon="money" tone="bg-ok-100 text-ok-700" label={t("customer.total_spend")} value={money(Number(stats?.total_spend ?? 0))} />
+        <Stat icon="trending" tone="bg-violet-100 text-violet-700" label={t("customer.average_ticket")} value={stats?.visit_count ? money(Number(stats.average_ticket)) : "—"} />
+        <Stat icon="replay" tone="bg-warn-100 text-warn-700" label={t("customer.frequency")} value={intervalDays ? t("customer.every_days", { days: intervalDays }) : "—"} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="card">
           <div className="text-sm text-stone-500">{t("customer.last_visit")}</div>
-          <div className="text-lg font-semibold first-letter:uppercase">{stats?.last_visit ? date(stats.last_visit, { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—"}</div>
+          <div className="text-lg font-medium first-letter:uppercase">{stats?.last_visit ? date(stats.last_visit, { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "—"}</div>
           {daysSinceLast !== null && <div className="text-xs text-stone-400">{t("customer.days_ago", { days: daysSinceLast })}</div>}
         </div>
         <div className="card">
           <div className="text-sm text-stone-500">{t("customer.next_appointment")}</div>
-          <div className="text-lg font-semibold first-letter:uppercase">{stats?.next_appointment ? `${date(stats.next_appointment)} · ${time(stats.next_appointment)}` : "—"}</div>
+          <div className="text-lg font-medium first-letter:uppercase">{stats?.next_appointment ? `${date(stats.next_appointment)} · ${time(stats.next_appointment)}` : "—"}</div>
           {!stats?.next_appointment && suggestedDate && <div className="text-xs text-stone-400">{t("customer.suggested_next", { date: date(suggestedDate) })}</div>}
         </div>
       </div>
 
       {overdue && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="font-semibold text-amber-900">⏰ {t("customer.overdue", { days: daysSinceLast!, interval: intervalDays! })}</p>
-          <p className="mt-2 rounded-xl bg-white p-3 text-sm text-stone-700">{message}</p>
+        <div className="rounded-3xl bg-warn-100 p-5">
+          <p className="flex items-center gap-2 font-medium text-warn-700"><Icon name="alarm" size={20} />{t("customer.overdue", { days: daysSinceLast!, interval: intervalDays! })}</p>
+          <p className="mt-3 rounded-2xl bg-white p-4 text-sm text-stone-700">{message}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <button className="btn-secondary btn-sm" onClick={() => { navigator.clipboard?.writeText(message); setCopied(true); }}>{copied ? t("common.copied") : t("message.copy")}</button>
-            {wa && <a className="btn-secondary btn-sm" href={wa} target="_blank" rel="noreferrer">{t("message.open_whatsapp")}</a>}
+            <button className="btn-secondary btn-sm" onClick={() => { navigator.clipboard?.writeText(message); setCopied(true); }}><Icon name="copy" size={16} />{copied ? t("common.copied") : t("message.copy")}</button>
+            {wa && <a className="btn-secondary btn-sm" href={wa} target="_blank" rel="noreferrer"><Icon name="chat" size={16} />{t("message.open_whatsapp")}</a>}
             <Link className="btn-primary btn-sm" href={rebookHref}>{t("customer.schedule_next")}</Link>
           </div>
         </div>
@@ -114,9 +117,9 @@ export function CustomerProfile({ customer, stats, history, intervalDays, daysSi
                     <td className="whitespace-nowrap px-4 py-2 text-right">
                       {future && (
                         <>
-                          <Link className="text-xs font-semibold text-brand-600" href={`/calendar?date=${localDateOf(a.start_at, timezone)}`}>{t("appointment.reschedule")}</Link>
+                          <Link className="text-xs font-medium text-brand-600" href={`/calendar?date=${localDateOf(a.start_at, timezone)}`}>{t("appointment.reschedule")}</Link>
                           <button
-                            className="ml-3 text-xs font-semibold text-red-600"
+                            className="ml-3 text-xs font-medium text-bad-700"
                             disabled={pending}
                             onClick={() => confirm(t("appointment.cancel_confirm")) && start(async () => { await setAppointmentStatus(a.id, "cancelled"); router.refresh(); })}
                           >
@@ -136,7 +139,7 @@ export function CustomerProfile({ customer, stats, history, intervalDays, daysSi
       <div className="flex justify-between">
         <a className="text-sm text-stone-500 underline" href={bookingUrl} target="_blank" rel="noreferrer">{t("nav.booking_page")}</a>
         <button
-          className="text-sm text-red-600"
+          className="text-sm text-bad-700"
           disabled={pending}
           onClick={() => confirm(t("customer.delete_confirm")) && start(async () => { const r = await deleteCustomer(customer.id); if (r.ok) router.push("/customers"); })}
         >
@@ -151,10 +154,11 @@ export function CustomerProfile({ customer, stats, history, intervalDays, daysSi
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ icon, tone, label, value }: { icon: IconName; tone: string; label: string; value: string }) {
   return (
     <div className="card">
-      <div className="text-xl font-bold tabular-nums">{value}</div>
+      <span className={`flex size-9 items-center justify-center rounded-full ${tone}`}><Icon name={icon} size={20} /></span>
+      <div className="mt-3 text-[22px] font-normal tabular-nums text-stone-900">{value}</div>
       <div className="text-sm text-stone-500">{label}</div>
     </div>
   );

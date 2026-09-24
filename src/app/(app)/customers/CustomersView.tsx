@@ -10,6 +10,8 @@ import { CustomerForm } from "@/components/CustomerForm";
 import { formatPhone } from "@/lib/phone";
 import { SEGMENTS, type Segment } from "@/lib/metrics/customers";
 import type { Customer, CustomerStats } from "@/lib/types";
+import { Icon } from "@/components/Icon";
+import { Avatar } from "@/components/Avatar";
 
 type Row = Customer & { stats: CustomerStats | null; segments: Segment[] };
 
@@ -33,12 +35,15 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
     <div className="mx-auto max-w-6xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="h1 mr-auto">{t("nav.customers")}</h1>
-        <button className="btn-secondary btn-sm" onClick={() => setImporting(true)}>{t("customers.import")}</button>
-        <button className="btn-primary btn-sm" onClick={() => setCreating(true)}>+ {t("customer.new")}</button>
+        <button className="btn-secondary btn-sm" onClick={() => setImporting(true)}><Icon name="upload" size={16} />{t("customers.import")}</button>
+        <button className="btn-primary btn-sm" onClick={() => setCreating(true)}><Icon name="personAdd" size={16} />{t("customer.new")}</button>
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); go({}); }}>
-        <input className="input" placeholder={t("customer.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
+        <label className="flex h-12 items-center gap-3 rounded-full bg-stone-100 px-5 transition-colors focus-within:bg-white focus-within:shadow-card">
+          <Icon name="search" size={22} className="text-stone-500" />
+          <input className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-stone-500 sm:text-sm" placeholder={t("customer.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
+        </label>
       </form>
 
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
@@ -46,9 +51,10 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
           <button
             key={s}
             onClick={() => go({ segment: s })}
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-sm font-medium ${segment === s ? "border-brand-500 bg-brand-50 text-brand-700" : "border-stone-200 bg-white text-stone-600"}`}
+            className={`flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors ${segment === s ? "border-transparent bg-nav text-nav-on" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"}`}
           >
-            {t(`segment.${s}`)} <span className="text-stone-400">{counts[s]}</span>
+            {segment === s && <Icon name="check" size={16} />}
+            {t(`segment.${s}`)} <span className={segment === s ? "text-nav-on/70" : "text-stone-400"}>{counts[s]}</span>
           </button>
         ))}
       </div>
@@ -63,16 +69,19 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
           <ul className="space-y-2 md:hidden">
             {customers.map((c) => (
               <li key={c.id}>
-                <Link href={`/customers/${c.id}`} className="card block">
+                <Link href={`/customers/${c.id}`} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-card">
+                  <Avatar name={`${c.first_name} ${c.last_name ?? ""}`} size={40} />
+                  <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold">{c.first_name} {c.last_name}</span>
-                    {c.segments.includes("vip") && <span className="chip bg-amber-100 text-amber-800">VIP</span>}
+                    <span className="truncate font-medium text-stone-900">{c.first_name} {c.last_name}</span>
+                    {c.segments.includes("vip") && <span className="chip gap-1 bg-warn-100 text-warn-700"><Icon name="star" size={12} />VIP</span>}
                   </div>
-                  <div className="mt-1 text-sm text-stone-500">
+                  <div className="mt-0.5 truncate text-sm text-stone-500">
                     {t("customer.visits", { count: c.stats?.visit_count ?? 0 })}
                     {c.stats?.last_visit && ` · ${t("customer.last_visit")}: ${date(c.stats.last_visit)}`}
                   </div>
                   {c.stats?.next_appointment && <div className="text-sm text-brand-700">{t("customer.next_appointment")}: {date(c.stats.next_appointment)}</div>}
+                  </div>
                 </Link>
               </li>
             ))}
@@ -90,13 +99,18 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
               </thead>
               <tbody className="divide-y divide-stone-100">
                 {customers.map((c) => (
-                  <tr key={c.id} className="cursor-pointer hover:bg-stone-50" onClick={() => router.push(`/customers/${c.id}`)}>
+                  <tr key={c.id} className="cursor-pointer transition-colors hover:bg-brand-50" onClick={() => router.push(`/customers/${c.id}`)}>
                     <td className="px-4 py-3">
-                      <div className="font-medium">
-                        {c.first_name} {c.last_name}
-                        {c.segments.includes("vip") && <span className="chip ml-2 bg-amber-100 text-amber-800">VIP</span>}
+                      <div className="flex items-center gap-3">
+                        <Avatar name={`${c.first_name} ${c.last_name ?? ""}`} size={36} />
+                        <div className="min-w-0">
+                          <div className="font-medium text-stone-900">
+                            {c.first_name} {c.last_name}
+                            {c.segments.includes("vip") && <span className="chip ml-2 gap-1 bg-warn-100 text-warn-700"><Icon name="star" size={12} />VIP</span>}
+                          </div>
+                          <div className="text-xs text-stone-500">{formatPhone(c.phone) || c.email}</div>
+                        </div>
                       </div>
-                      <div className="text-xs text-stone-400">{formatPhone(c.phone) || c.email}</div>
                     </td>
                     <td className="px-4 py-3">{c.stats?.last_visit ? date(c.stats.last_visit) : "—"}</td>
                     <td className="px-4 py-3">{c.stats?.next_appointment ? date(c.stats.next_appointment) : "—"}</td>

@@ -11,7 +11,7 @@ export default async function PublicLayout({ children, params }: { children: Rea
   return (
     <I18nProvider {...i18nProps(business)}>
       <HtmlLang lang={business.language} />
-      <div className="min-h-dvh bg-white sm:bg-stone-50">
+      <div className="min-h-dvh bg-white sm:bg-stone-100">
         <div className="mx-auto max-w-lg sm:py-8">{children}</div>
       </div>
     </I18nProvider>

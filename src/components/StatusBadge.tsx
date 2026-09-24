@@ -4,11 +4,11 @@ import { useI18n } from "@/components/I18nProvider";
 import type { AppointmentStatus } from "@/lib/types";
 
 export const STATUS_STYLES: Record<AppointmentStatus, string> = {
-  scheduled: "bg-sky-100 text-sky-800",
-  confirmed: "bg-emerald-100 text-emerald-800",
-  completed: "bg-stone-200 text-stone-700",
-  cancelled: "bg-red-100 text-red-700 line-through",
-  no_show: "bg-amber-100 text-amber-800",
+  scheduled: "bg-brand-100 text-brand-900",
+  confirmed: "bg-ok-100 text-ok-700",
+  completed: "bg-stone-100 text-stone-600",
+  cancelled: "bg-bad-100 text-bad-700 line-through",
+  no_show: "bg-warn-100 text-warn-700",
 };
 
 export function StatusBadge({ status }: { status: AppointmentStatus }) {

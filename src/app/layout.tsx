@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Google_Sans } from "next/font/google";
 import "./globals.css";
+
+const googleSans = Google_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-google-sans", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
@@ -7,11 +10,11 @@ export const metadata: Metadata = {
   description: "Appointments, booking and customers for service businesses.",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#db2777" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f8fafd" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={googleSans.variable} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );
