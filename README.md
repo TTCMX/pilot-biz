@@ -34,6 +34,7 @@ supabase/setup.sql            Esquema completo + RLS (aislamiento por business_i
 - **Aislamiento de tenants**: RLS en todas las tablas vía `is_business_member(business_id)`.
 - **Sin dobles reservas**: restricción `EXCLUDE` en Postgres por profesional + rango de tiempo.
 - **Página pública**: nunca usa la anon key contra tablas; pasa por el servidor con la service role key, que valida todo.
+- **Anti-spam** (`src/lib/booking/abuse.ts`): campo trampa para bots + límites por negocio: 10 reservas/altas en lista de espera por IP por hora, 3 reservas en línea por teléfono en 24 h, 5 citas futuras en línea por teléfono y 3 altas en lista de espera por teléfono al día. La IP solo se guarda como hash con sal. Sin cambios de esquema.
 - **Métricas derivadas** (visitas, gasto, ticket, última/próxima cita) en la vista `customer_stats`, no duplicadas.
 - **Mensajes**: solo sugeridos; la dueña los copia o abre WhatsApp manualmente.
 - **Correos** (opcional, Resend): confirmación/cambio/cancelación a la clienta y avisos a la dueña, enviados después de responder (`after()`), así nunca frenan ni rompen una reserva.

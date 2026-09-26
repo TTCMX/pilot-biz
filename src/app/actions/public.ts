@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { toE164 } from "@/lib/phone";
 import { audit } from "@/lib/audit";
 import { notifyAppointment, notifyWaitlist } from "@/lib/notifications";
+import { checkPublicAbuse, clientIpHash } from "@/lib/booking/abuse";
 import type { Appointment } from "@/lib/types";
 import { fail, ok, type ActionResult } from "./result";
 
@@ -42,9 +43,12 @@ export async function createPublicBooking(input: z.input<typeof bookingSchema>):
   const v = parsed.data;
   const business = await getPublicBusiness(v.slug);
   if (!business) return fail("errors.not_found");
-  if (!toE164(v.phone, business.country)) return fail("errors.invalid_phone");
+  const phone = toE164(v.phone, business.country);
+  if (!phone) return fail("errors.invalid_phone");
 
   const db = createAdminClient();
+  const ip = await clientIpHash();
+  if (await checkPublicAbuse(db, "booking", { businessId: business.id, phone, ipHash: ip })) return fail("errors.rate_limited");
   try {
     let rebookedFromId: string | null = null;
     if (v.rebookToken) {
@@ -62,7 +66,7 @@ export async function createPublicBooking(input: z.input<typeof bookingSchema>):
       rebookedFromId,
       enforceAvailability: true,
     });
-    await audit(db, { business_id: business.id, actor_id: null, action: "create", entity: "appointment", entity_id: appt.id, data: { source: "booking_page" } });
+    await audit(db, { business_id: business.id, actor_id: null, action: "create", entity: "appointment", entity_id: appt.id, data: { source: "booking_page", ip } });
     notifyAppointment("booked", appt.id);
     refresh();
     return ok({ token: appt.public_token });
@@ -131,8 +135,11 @@ export async function joinPublicWaitlist(input: z.input<typeof waitlistSchema>):
   const v = parsed.data;
   const business = await getPublicBusiness(v.slug);
   if (!business) return fail("errors.not_found");
-  if (!toE164(v.phone, business.country)) return fail("errors.invalid_phone");
+  const phone = toE164(v.phone, business.country);
+  if (!phone) return fail("errors.invalid_phone");
   const db = createAdminClient();
+  const ip = await clientIpHash();
+  if (await checkPublicAbuse(db, "waitlist", { businessId: business.id, phone, ipHash: ip })) return fail("errors.rate_limited");
   const { data: service } = await db.from("services").select("id").eq("id", v.serviceId).eq("business_id", business.id).maybeSingle();
   if (!service) return fail("errors.not_found");
   if (v.staffId) {
@@ -152,6 +159,7 @@ export async function joinPublicWaitlist(input: z.input<typeof waitlistSchema>):
     source: "booking_page",
   }).select("id").single();
   if (error) return fail("errors.generic");
+  await audit(db, { business_id: business.id, actor_id: null, action: "create", entity: "waitlist", entity_id: entry.id, data: { source: "booking_page", ip } });
   notifyWaitlist(entry.id);
   refresh();
   return ok(undefined);

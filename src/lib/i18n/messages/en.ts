@@ -417,6 +417,7 @@ export const en = {
   "email.owner.waitlist.subject": "Waitlist: {name} wants {service}",
   "email.owner.waitlist.heading": "Someone joined your waitlist",
   "email.owner.waitlist.intro": "{name} would like {service}. When a matching time frees up you'll see it in your waitlist.",
+  "errors.rate_limited": "Too many bookings in a short time. Please try again later or contact the business.",
 } as const;
 
 export type MessageKey = keyof typeof en;
