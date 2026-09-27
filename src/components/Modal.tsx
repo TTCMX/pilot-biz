@@ -23,11 +23,11 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[28px] bg-white p-6 shadow-float sm:max-w-lg sm:rounded-[28px]"
+        className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[26px] bg-surface p-6 shadow-float sm:max-w-lg sm:rounded-[26px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
-          <h2 className="text-2xl font-normal text-stone-900">{title}</h2>
+          <h2 className="h2 text-[24px]">{title}</h2>
           <button className="icon-btn -mr-2 -mt-1" onClick={onClose} aria-label="Close">
             <Icon name="close" size={22} />
           </button>

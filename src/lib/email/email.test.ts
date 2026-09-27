@@ -22,7 +22,7 @@ describe("email templates", () => {
     expect(e.html).toContain("Uñas &lt;Ana&gt;");
     expect(e.html).not.toContain("<Ana>");
     expect(e.html).toContain('href="https://app.test/unas-ana/a/abc"');
-    expect(e.text).toContain("Ver, reagendar o cancelar: https://app.test/unas-ana/a/abc");
+    expect(e.text).toContain("Ver, cambiar o cancelar: https://app.test/unas-ana/a/abc");
   });
 
   it("renders the owner notification in English", () => {

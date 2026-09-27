@@ -132,7 +132,7 @@ function StaffForm({ staff, services, assigned, onDone }: { staff: Staff | null;
         </div>
         <div>
           <label className="label">{t("staff.color")}</label>
-          <input className="input h-[42px] w-16 p-1" type="color" name="color" defaultValue={staff?.color ?? "#1a73e8"} />
+          <input className="input h-[42px] w-16 p-1" type="color" name="color" defaultValue={staff?.color ?? "#55694f"} />
         </div>
       </div>
       <div>
@@ -219,9 +219,9 @@ function ExceptionForm({ staffId, onDone }: { staffId: string | null; onDone: ()
       }
     >
       {staffId && (
-        <div className="flex h-10 overflow-hidden rounded-full border border-stone-300">
+        <div className="flex h-11 overflow-hidden rounded-full border border-brand-200">
           {(["time_off", "custom_hours"] as const).map((v) => (
-            <button type="button" key={v} onClick={() => setType(v)} className={`flex flex-1 items-center justify-center gap-1.5 text-sm font-medium ${type === v ? "bg-nav text-nav-on" : "text-stone-700"}`}>
+            <button type="button" key={v} onClick={() => setType(v)} className={`flex flex-1 items-center justify-center gap-1.5 text-sm font-medium ${type === v ? "bg-brand-600 text-white" : "text-stone-700"}`}>
               {type === v && <Icon name="check" size={16} />}
               {t(`exception.${v}`)}
             </button>

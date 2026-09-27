@@ -16,7 +16,7 @@ export function AuthForm({ mode, next, linkError }: { mode: "login" | "signup"; 
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
       <div className="card px-6 py-9 sm:px-10">
         <Link href="/" className="mb-6 inline-block"><Logo /></Link>
-        <h1 className="text-[28px] font-normal leading-tight text-stone-900">{mode === "login" ? t("auth.login_title") : t("auth.signup_title")}</h1>
+        <h1 className="h1">{mode === "login" ? t("auth.login_title") : t("auth.signup_title")}</h1>
         <p className="mb-7 mt-2 text-stone-600">{mode === "login" ? t("auth.login_subtitle") : t("auth.signup_subtitle")}</p>
         {linkError && !state && <p className="mb-4 rounded-2xl bg-warn-100 p-3 text-sm text-warn-700">{t("auth.link_expired")}</p>}
         {state?.info ? (
@@ -39,7 +39,7 @@ export function AuthForm({ mode, next, linkError }: { mode: "login" | "signup"; 
               <input className="input" id="password" name="password" type="password" minLength={mode === "signup" ? 8 : undefined} autoComplete={mode === "login" ? "current-password" : "new-password"} required />
               {mode === "signup" && <p className="mt-1 text-xs text-stone-500">{t("auth.password_hint")}</p>}
               {mode === "login" && (
-                <Link href="/forgot-password" className="mt-1.5 inline-block text-xs font-medium text-brand-600">{t("auth.forgot_link")}</Link>
+                <Link href="/forgot-password" className="mt-2 inline-block text-sm font-medium text-brand-700">{t("auth.forgot_link")}</Link>
               )}
             </div>
             {state?.error && <p className="text-sm text-bad-700">{msg(state.error)}</p>}
@@ -51,9 +51,9 @@ export function AuthForm({ mode, next, linkError }: { mode: "login" | "signup"; 
       </div>
       <p className="mt-6 text-center text-sm text-stone-600">
         {mode === "login" ? (
-          <>{t("auth.no_account")} <Link className="font-medium text-brand-600" href="/signup">{t("auth.create_account")}</Link></>
+          <>{t("auth.no_account")} <Link className="font-medium text-brand-700" href="/signup">{t("auth.create_account")}</Link></>
         ) : (
-          <>{t("auth.have_account")} <Link className="font-medium text-brand-600" href="/login">{t("auth.login")}</Link></>
+          <>{t("auth.have_account")} <Link className="font-medium text-brand-700" href="/login">{t("auth.login")}</Link></>
         )}
       </p>
     </div>

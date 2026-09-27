@@ -75,7 +75,7 @@ function layoutOverlaps<T extends { id: string; start_at: string; end_at: string
   return out;
 }
 
-/** Google Calendar–like event styles: confirmed = solid, scheduled = tinted, done = faded. */
+/** Flat event styles, no side borders: confirmed = solid, scheduled = soft tint with a fine outline, done = faded. */
 function blockStyle(status: AppointmentStatus, color: string): React.CSSProperties {
   switch (status) {
     case "confirmed":
@@ -83,11 +83,11 @@ function blockStyle(status: AppointmentStatus, color: string): React.CSSProperti
     case "completed":
       return { background: color, color: "#fff", opacity: 0.55 };
     case "cancelled":
-      return { background: "#fff", color: "#5f6368", boxShadow: `inset 0 0 0 1px ${color}66` };
+      return { background: "#f6f7f1", color: "#55605a", boxShadow: `inset 0 0 0 1px ${color}55` };
     case "no_show":
-      return { background: "#ffefc9", color: "#5c4300", boxShadow: `inset 3px 0 0 ${color}` };
+      return { background: "#f2e4d3", color: "#6b4a26", boxShadow: `inset 0 0 0 1px ${color}40` };
     default:
-      return { background: `${color}26`, color: "#1f1f1f", boxShadow: `inset 3px 0 0 ${color}` };
+      return { background: `${color}24`, color: "#1f2a22", boxShadow: `inset 0 0 0 1px ${color}59` };
   }
 }
 const SNAP_MIN = 15;
@@ -202,13 +202,13 @@ export function CalendarView(props: Props) {
           <button className="icon-btn" onClick={() => shift(-1)} aria-label="prev"><Icon name="chevronLeft" size={24} /></button>
           <button className="icon-btn" onClick={() => shift(1)} aria-label="next"><Icon name="chevronRight" size={24} /></button>
         </div>
-        <h1 className="mr-auto text-[22px] font-normal text-stone-900 first-letter:uppercase sm:text-[26px]">{heading}</h1>
-        <div className="flex h-10 overflow-hidden rounded-full border border-stone-300">
+        <h1 className="mr-auto font-display text-[24px] font-light text-stone-900 first-letter:uppercase sm:text-[28px]">{heading}</h1>
+        <div className="flex h-11 overflow-hidden rounded-full border border-brand-200">
           {(["day", "week"] as const).map((v) => (
             <button
               key={v}
               onClick={() => nav({ view: v })}
-              className={`flex items-center gap-1.5 px-4 text-sm font-medium transition-colors ${view === v ? "bg-nav text-nav-on" : "bg-white text-stone-700 hover:bg-stone-100"} ${v === "week" ? "border-l border-stone-300" : ""}`}
+              className={`flex items-center gap-1.5 px-4 text-sm font-medium transition-colors ${view === v ? "bg-brand-600 text-white" : "bg-surface text-stone-700 hover:bg-brand-100"} ${v === "week" ? "border-l border-brand-200" : ""}`}
             >
               {view === v && <Icon name="check" size={16} />}
               {t(`calendar.${v}`)}
@@ -219,16 +219,16 @@ export function CalendarView(props: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <input type="date" className="input h-10 w-auto" value={date} onChange={(e) => e.target.value && nav({ date: e.target.value })} />
+        <input type="date" className="input h-11 w-auto" value={date} onChange={(e) => e.target.value && nav({ date: e.target.value })} />
         {staff.length > 1 && (
-          <select className="input h-10 w-auto" value={staffFilter ?? ""} onChange={(e) => nav({ staff: e.target.value || null })}>
+          <select className="input h-11 w-auto" value={staffFilter ?? ""} onChange={(e) => nav({ staff: e.target.value || null })}>
             <option value="">{t("calendar.all_staff")}</option>
             {staff.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
         )}
-        <label className="flex h-10 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm text-stone-600 hover:bg-stone-100">
+        <label className="flex h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm text-stone-600 hover:bg-brand-100">
           <input type="checkbox" className="size-4" checked={showCancelled} onChange={(e) => setShowCancelled(e.target.checked)} />
           {t("calendar.show_cancelled")}
         </label>
@@ -242,7 +242,7 @@ export function CalendarView(props: Props) {
         </p>
       )}
 
-      <div className={`overflow-x-auto rounded-3xl bg-white shadow-card ${pending ? "opacity-70" : ""}`}>
+      <div className={`overflow-x-auto rounded-[20px] bg-surface ${pending ? "opacity-70" : ""}`}>
         <div className="flex" style={{ minWidth: columns.length > 1 ? columns.length * 140 + 64 : undefined }}>
           <div className="w-16 shrink-0">
             <div className="h-16" />
@@ -263,12 +263,12 @@ export function CalendarView(props: Props) {
             const d = DateTime.fromISO(col.date).setLocale(locale);
             const nowTop = (nowMinutes - startHour * 60) * (HOUR_PX / 60);
             return (
-              <div key={col.key} className="min-w-[140px] flex-1 border-l border-stone-200">
-                <div className="sticky top-0 z-10 flex h-16 flex-col items-center justify-center gap-0.5 bg-white px-2">
+              <div key={col.key} className="min-w-[140px] flex-1 border-l border-stone-100">
+                <div className="sticky top-0 z-10 flex h-16 flex-col items-center justify-center gap-0.5 bg-surface px-2">
                   {view === "week" ? (
                     <button onClick={() => nav({ date: col.date, view: "day" })} className="flex flex-col items-center gap-0.5">
-                      <span className={`text-[11px] font-medium uppercase ${isToday ? "text-brand-600" : "text-stone-500"}`}>{d.toFormat("ccc")}</span>
-                      <span className={`flex size-9 items-center justify-center rounded-full text-[20px] ${isToday ? "bg-brand-600 text-white" : "text-stone-800 hover:bg-stone-100"}`}>{d.day}</span>
+                      <span className={`text-xs font-medium ${isToday ? "text-brand-700" : "text-stone-500"}`}>{d.toFormat("ccc")}</span>
+                      <span className={`flex size-9 items-center justify-center rounded-full text-[20px] ${isToday ? "bg-brand-600 text-white" : "text-stone-800 hover:bg-brand-100"}`}>{d.day}</span>
                     </button>
                   ) : staff.length > 1 ? (
                     <span className="flex items-center gap-2 text-sm font-medium text-stone-800">
@@ -277,13 +277,13 @@ export function CalendarView(props: Props) {
                     </span>
                   ) : (
                     <>
-                      <span className={`text-[11px] font-medium uppercase ${isToday ? "text-brand-600" : "text-stone-500"}`}>{d.toFormat("ccc")}</span>
+                      <span className={`text-xs font-medium ${isToday ? "text-brand-700" : "text-stone-500"}`}>{d.toFormat("ccc")}</span>
                       <span className={`flex size-9 items-center justify-center rounded-full text-[20px] ${isToday ? "bg-brand-600 text-white" : "text-stone-800"}`}>{d.day}</span>
                     </>
                   )}
                 </div>
                 <div
-                  className="relative cursor-pointer bg-stone-100/70"
+                  className="relative cursor-pointer bg-stone-50/80"
                   style={{ height: hours.length * HOUR_PX }}
                   onClick={(e) => onEmptyClick(e, col)}
                   onDragOver={(e) => e.preventDefault()}
@@ -292,10 +292,10 @@ export function CalendarView(props: Props) {
                   {working.map((w, i) => {
                     const top = ((w.start - dayStart) / 60000 - startHour * 60) * (HOUR_PX / 60);
                     const height = ((w.end - w.start) / 60000) * (HOUR_PX / 60);
-                    return <div key={i} className="pointer-events-none absolute inset-x-0 bg-white" style={{ top, height }} />;
+                    return <div key={i} className="pointer-events-none absolute inset-x-0 bg-surface" style={{ top, height }} />;
                   })}
                   {hours.map((h, i) => (
-                    <div key={h} className="pointer-events-none absolute inset-x-0 border-t border-stone-200" style={{ top: i * HOUR_PX }} />
+                    <div key={h} className="pointer-events-none absolute inset-x-0 border-t border-stone-100" style={{ top: i * HOUR_PX }} />
                   ))}
                   {(() => {
                     const layout = layoutOverlaps(colAppts);
@@ -303,7 +303,7 @@ export function CalendarView(props: Props) {
                     const { col: lane, cols: lanes } = layout.get(a.id) ?? { col: 0, cols: 1 };
                     const top = (minutesOf(a.start_at) - startHour * 60) * (HOUR_PX / 60);
                     const height = Math.max(22, ((Date.parse(a.end_at) - Date.parse(a.start_at)) / 60000) * (HOUR_PX / 60) - 2);
-                    const color = staffById.get(a.staff_id)?.color ?? "#1a73e8";
+                    const color = staffById.get(a.staff_id)?.color ?? "#55694f";
                     return (
                       <button
                         key={a.id}
@@ -313,7 +313,7 @@ export function CalendarView(props: Props) {
                           e.dataTransfer.setData("text/offset", String(e.clientY - e.currentTarget.getBoundingClientRect().top));
                         }}
                         onClick={() => setSelected(a)}
-                        className="absolute overflow-hidden rounded-lg px-2 py-1 text-left text-xs leading-snug ring-1 ring-white transition-shadow hover:z-10 hover:shadow-float"
+                        className="absolute overflow-hidden rounded-xl px-2 py-1 text-left text-xs leading-snug ring-1 ring-surface transition-shadow hover:z-10 hover:shadow-float"
                         style={{ top, height, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 6px)`, ...blockStyle(a.status, color) }}
                       >
                         <div className={`truncate font-medium ${a.status === "cancelled" ? "line-through" : ""}`}>{a.customer?.first_name} {a.customer?.last_name}</div>
@@ -326,8 +326,8 @@ export function CalendarView(props: Props) {
                   })()}
                   {isToday && nowTop >= 0 && nowTop <= hours.length * HOUR_PX && (
                     <div className="pointer-events-none absolute inset-x-0 z-20" style={{ top: nowTop }}>
-                      <div className="absolute -left-1.5 -top-1.5 size-3 rounded-full bg-[#ea4335]" />
-                      <div className="h-0.5 bg-[#ea4335]" />
+                      <div className="absolute -left-1.5 -top-1.5 size-3 rounded-full bg-gold" />
+                      <div className="h-px bg-gold" />
                     </div>
                   )}
                 </div>
@@ -337,7 +337,7 @@ export function CalendarView(props: Props) {
         </div>
       </div>
 
-      <button className="btn-fab fixed bottom-24 right-4 z-30 sm:hidden" onClick={() => setCreating({ date })} aria-label={t("calendar.new_appointment")}>
+      <button className="btn-fab fixed bottom-[calc(100px+env(safe-area-inset-bottom))] right-5 z-30 size-14 justify-center px-0 sm:hidden" onClick={() => setCreating({ date })} aria-label={t("calendar.new_appointment")}>
         <Icon name="add" size={24} />
       </button>
 

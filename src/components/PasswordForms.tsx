@@ -12,7 +12,7 @@ function Shell({ title, subtitle, children }: { title: string; subtitle: string;
     <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-4 py-10">
       <div className="card px-6 py-9 sm:px-10">
         <Link href="/" className="mb-6 inline-block"><Logo /></Link>
-        <h1 className="text-[28px] font-normal leading-tight text-stone-900">{title}</h1>
+        <h1 className="h1">{title}</h1>
         <p className="mb-7 mt-2 text-stone-600">{subtitle}</p>
         {children}
       </div>

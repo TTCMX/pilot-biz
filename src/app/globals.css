@@ -1,101 +1,121 @@
 @import "tailwindcss";
 
-/* Material 3–inspired theme: Google blue primary, cool neutrals, Google accent tones. */
+/* Botanical × hospitality: sage over a warm neutral, peach and gold as small accents.
+   Flat colors only (no gradients), generous radii, 4px spacing base. */
 @theme {
-  --font-sans: var(--font-google-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
 
-  /* Primary (brand) — Google blue tonal palette */
-  --color-brand-50: #eef4fe;
-  --color-brand-100: #d3e3fd;
-  --color-brand-200: #a8c7fa;
-  --color-brand-300: #7cacf8;
-  --color-brand-500: #1a73e8;
-  --color-brand-600: #0b57d0;
-  --color-brand-700: #0842a0;
-  --color-brand-900: #041e49;
+  /* Primary — Salvia #55694F tonal range. Brote (100) is the active surface, Bosque (900) the ink. */
+  --color-brand-50: #f0f2ea;
+  --color-brand-100: #e3e8da;
+  --color-brand-200: #c9d0c0;
+  --color-brand-300: #a3ae99;
+  --color-brand-500: #6a7e63;
+  --color-brand-600: #55694f;
+  --color-brand-700: #465840;
+  --color-brand-900: #1f2a22;
 
-  /* Neutrals — Google's cool greys (overrides Tailwind stone) */
-  --color-stone-50: #f8fafd;
-  --color-stone-100: #f0f4f9;
-  --color-stone-200: #e1e5ea;
-  --color-stone-300: #c4c7c5;
-  --color-stone-400: #8e918f;
-  --color-stone-500: #5f6368;
-  --color-stone-600: #444746;
-  --color-stone-700: #3c4043;
-  --color-stone-800: #28292a;
-  --color-stone-900: #1f1f1f;
+  /* Warm neutrals (override Tailwind stone): Niebla background → Musgo secondary text → Bosque ink */
+  --color-stone-50: #eceee4;
+  --color-stone-100: #e4e7dc;
+  --color-stone-200: #d8dccf;
+  --color-stone-300: #c9d0c0;
+  --color-stone-400: #7d877f;
+  --color-stone-500: #55605a;
+  --color-stone-600: #4a544e;
+  --color-stone-700: #37413a;
+  --color-stone-800: #29332c;
+  --color-stone-900: #1f2a22;
 
-  /* Accent containers (Google green / yellow / red / purple) */
-  --color-ok-100: #c4eed0;
-  --color-ok-700: #0f5223;
-  --color-warn-100: #ffefc9;
-  --color-warn-700: #5c4300;
-  --color-bad-100: #ffdad6;
-  --color-bad-700: #8c1d18;
-  --color-violet-100: #e9ddff;
-  --color-violet-700: #4a2c8a;
-  --color-nav: #c2e7ff;
-  --color-nav-on: #001d35;
+  /* Named brand colors */
+  --color-surface: #f6f7f1; /* Lino — cards, navigation, inactive chips */
+  --color-mist: #eceee4; /* Niebla — screen background */
+  --color-forest: #1f2a22; /* Bosque */
+  --color-peach: #e7c9a9; /* Durazno — decorative shapes, avatar */
+  --color-gold: #d9b27c; /* Dorado — status dots, fine lines. Never text. */
 
-  --shadow-card: 0 1px 2px 0 rgb(60 64 67 / 0.08), 0 1px 3px 1px rgb(60 64 67 / 0.06);
-  --shadow-float: 0 1px 3px 0 rgb(60 64 67 / 0.3), 0 4px 8px 3px rgb(60 64 67 / 0.15);
+  /* Muted status containers (never used as brand accents) */
+  --color-ok-100: #e3e8da;
+  --color-ok-700: #3f5239;
+  --color-warn-100: #f2e4d3;
+  --color-warn-700: #6b4a26;
+  --color-bad-100: #f1e0da;
+  --color-bad-700: #8a3b2e;
+  --color-violet-100: #dfe7e5;
+  --color-violet-700: #3e5655;
+  --color-nav: #e3e8da;
+  --color-nav-on: #1f2a22;
+
+  --shadow-card: 0 1px 2px 0 rgb(31 42 34 / 0.04);
+  --shadow-float: 0 8px 24px -6px rgb(31 42 34 / 0.14);
 }
 
 html { -webkit-text-size-adjust: 100%; }
-body { @apply bg-stone-50 text-stone-900 antialiased; }
+body { @apply bg-mist text-stone-900 antialiased; }
 ::selection { background: var(--color-brand-100); }
 
 @utility btn {
-  @apply inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 text-sm font-medium tracking-[0.01em] transition-colors disabled:cursor-not-allowed disabled:opacity-40;
+  @apply inline-flex h-11 items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 text-[15px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40;
 }
-/* Filled */
+/* The one dominant action per screen */
 @utility btn-primary {
-  @apply btn bg-brand-600 text-white hover:bg-brand-700 hover:shadow-card active:bg-brand-700;
+  @apply btn h-12 bg-brand-600 font-semibold text-white hover:bg-brand-700 active:bg-brand-700;
 }
-/* Tonal */
 @utility btn-tonal {
-  @apply btn bg-brand-100 text-brand-900 hover:bg-brand-200;
+  @apply btn bg-brand-100 text-stone-900 hover:bg-brand-200;
 }
-/* Outlined */
+/* Secondary: Lino with a fine Salvia-clara border */
 @utility btn-secondary {
-  @apply btn border border-stone-300 bg-white text-brand-600 hover:bg-brand-50;
+  @apply btn border border-brand-200 bg-surface text-stone-900 hover:bg-brand-100;
 }
-/* Text */
 @utility btn-ghost {
-  @apply btn px-3 text-brand-600 hover:bg-brand-50;
+  @apply btn px-4 text-brand-700 hover:bg-brand-100;
 }
 @utility btn-danger {
-  @apply btn border border-stone-300 bg-white text-bad-700 hover:bg-bad-100;
+  @apply btn border border-brand-200 bg-surface text-bad-700 hover:bg-bad-100;
 }
 @utility btn-sm {
-  @apply h-8 px-4 text-[13px];
+  @apply px-4 text-sm;
 }
-/* Floating action button (Gmail "Compose" style) */
 @utility btn-fab {
-  @apply inline-flex h-14 items-center gap-3 rounded-2xl bg-brand-100 px-5 text-sm font-medium text-brand-900 shadow-card transition-shadow hover:shadow-float;
+  @apply inline-flex h-14 items-center gap-3 rounded-full bg-brand-600 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-brand-700;
 }
 @utility icon-btn {
-  @apply inline-flex size-10 items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-stone-100 disabled:opacity-40;
+  @apply inline-flex size-11 items-center justify-center rounded-full text-stone-600 transition-colors hover:bg-brand-100 disabled:opacity-40;
 }
 
 @utility input {
-  @apply block h-12 w-full rounded-lg border border-stone-300 bg-white px-4 text-base text-stone-900 transition-colors placeholder:text-stone-400 hover:border-stone-600 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 sm:text-sm;
+  @apply block h-12 w-full rounded-2xl border border-brand-200 bg-surface px-4 text-base text-stone-900 transition-colors placeholder:text-stone-400 hover:border-brand-300 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 sm:text-[15px];
 }
 @utility label {
-  @apply mb-1.5 block text-sm font-medium text-stone-600;
+  @apply mb-1.5 block text-sm font-medium text-stone-500;
 }
+/* Information card: Lino, 20px radius */
 @utility card {
-  @apply rounded-3xl bg-white p-5 shadow-card sm:p-6;
+  @apply rounded-[20px] bg-surface p-5 sm:p-6;
+}
+/* Hero card: Salvia, 26px radius, room for the decorative shapes */
+@utility card-hero {
+  @apply relative overflow-hidden rounded-[26px] bg-brand-600 p-6 text-white;
 }
 @utility chip {
-  @apply inline-flex h-6 items-center rounded-lg px-2 text-xs font-medium;
+  @apply inline-flex h-7 items-center rounded-full px-3 text-xs font-medium;
 }
+/* Selection chip: 44px pill, Salvia when active, Lino with border when not */
+@utility choice {
+  @apply inline-flex h-11 items-center justify-center rounded-full border border-brand-200 bg-surface px-4 text-sm font-medium text-stone-900 transition-colors hover:bg-brand-100 aria-pressed:border-brand-600 aria-pressed:bg-brand-600 aria-pressed:text-white;
+}
+/* Display voice — Fraunces Light. Never below 18px, never on buttons or forms. */
 @utility h1 {
-  @apply text-[26px] font-normal leading-tight tracking-tight text-stone-900 sm:text-[32px];
+  @apply font-display text-[27px] font-light leading-[1.1] text-stone-900 sm:text-[32px];
 }
 @utility h2 {
-  @apply text-lg font-medium text-stone-900;
+  @apply font-display text-[20px] font-light leading-[1.15] text-stone-900;
+}
+/* Eyebrow (overline): one per screen at most */
+@utility eyebrow {
+  @apply text-xs font-medium uppercase tracking-[0.14em] text-stone-500;
 }
 @utility muted {
   @apply text-sm text-stone-500;

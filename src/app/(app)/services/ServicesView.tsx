@@ -37,7 +37,7 @@ export function ServicesView({ services, staff, links, currency }: { services: S
                     {staff.length > 1 && ` · ${who.length ? who.join(", ") : t("service.all_staff")}`}
                   </div>
                 </div>
-                <div className="text-lg font-normal tabular-nums text-stone-900">{money(s.price, s.currency)}</div>
+                <div className="font-display text-[20px] font-light tabular-nums text-stone-900">{money(s.price, s.currency)}</div>
                 <Icon name="chevronRight" size={22} className="text-stone-400" />
               </button>
             </li>
