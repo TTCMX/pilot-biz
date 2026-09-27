@@ -56,14 +56,16 @@ export function Icon({ name, size = 20, className = "" }: { name: IconName; size
   return <Glyph size={size} strokeWidth={1.5} aria-hidden="true" className={`shrink-0 ${className}`} />;
 }
 
-/** Brand mark: a sage seed with a fine gold orbit, plus the italic Fraunces logotype. */
+/** Brand mark: a sprout on a Salvia seed — Lino and peach leaves, a small gold sun — plus the italic Fraunces logotype. */
 export function Logo({ withName = true, className = "" }: { withName?: boolean; className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <svg viewBox="0 0 32 32" width={28} height={28} aria-hidden="true">
-        <circle cx="14" cy="17" r="10" fill="#55694F" />
-        <circle cx="21" cy="11" r="7" fill="#E7C9A9" />
-        <circle cx="21" cy="11" r="9.5" fill="none" stroke="#D9B27C" strokeWidth="1" />
+    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+      <svg viewBox="0 0 32 32" width={30} height={30} aria-hidden="true" className="shrink-0">
+        <circle cx="16" cy="16" r="16" fill="#55694F" />
+        <path d="M16 26.5V19.5C16 17 16.6 15.2 17.6 13.8" fill="none" stroke="#F6F7F1" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M17.2 14.6C17.2 9.4 20.6 6.4 25.6 6.4C25.6 11.6 22.2 14.6 17.2 14.6Z" fill="#F6F7F1" />
+        <path d="M15.4 20.4C15.4 16.2 12.6 13.8 8.4 13.8C8.4 18 11.2 20.4 15.4 20.4Z" fill="#E7C9A9" />
+        <circle cx="10" cy="8.5" r="1.8" fill="#D9B27C" />
       </svg>
       {withName && <span className="font-display text-[22px] font-light italic leading-none text-stone-900">{APP_NAME}</span>}
     </span>
