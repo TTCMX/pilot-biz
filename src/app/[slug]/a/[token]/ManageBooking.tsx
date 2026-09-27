@@ -9,6 +9,8 @@ import { SlotPicker } from "../../BookingFlow";
 import { formatPhone } from "@/lib/phone";
 import type { MessageKey } from "@/lib/i18n";
 import { HeroShapes, Icon } from "@/components/Icon";
+import { PhotoGrid, PhotoUploadButton, type PhotoView } from "@/components/Photos";
+import { finishReferenceUpload, startReferenceUpload } from "@/app/actions/photos";
 import type { AppointmentStatus } from "@/lib/types";
 
 type Appt = {
@@ -17,7 +19,7 @@ type Appt = {
   service: { name: string; duration_minutes: number } | null; staff: { name: string } | null; customer: { first_name: string } | null;
 };
 
-export function ManageBooking({ slug, isNew, appt, address, businessPhone }: { slug: string; isNew: boolean; appt: Appt; address: string; businessPhone: string | null }) {
+export function ManageBooking({ slug, isNew, appt, address, businessPhone, photos, photosFailed }: { slug: string; isNew: boolean; appt: Appt; address: string; businessPhone: string | null; photos: PhotoView[]; photosFailed: boolean }) {
   const { t, money, date, time } = useI18n();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -67,6 +69,24 @@ export function ManageBooking({ slug, isNew, appt, address, businessPhone }: { s
         <div className="mt-1 text-sm text-stone-500">{appt.staff?.name} · {money(Number(appt.price), appt.currency)}</div>
         {address && <div className="mt-3 flex items-center gap-2 text-sm text-stone-500"><Icon name="place" size={18} />{address}</div>}
       </div>
+
+      {(photos.length > 0 || active) && (
+        <div className="rounded-[20px] bg-surface p-5">
+          <div className="mb-3 text-[15px] font-semibold text-stone-900">{t("photos.your_references")}</div>
+          {photosFailed && photos.length < 3 && <p className="mb-3 text-sm text-warn-700">{t("photos.upload_failed")}</p>}
+          <PhotoGrid photos={photos} size="sm" />
+          {active && photos.length < 3 && (
+            <div className="mt-3">
+              <PhotoUploadButton
+                label={t("photos.add_reference")}
+                start={(types) => startReferenceUpload(slug, appt.public_token, types)}
+                finish={(paths) => finishReferenceUpload(slug, appt.public_token, paths)}
+                onDone={() => router.refresh()}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {active && !rescheduling && (
         <div className="grid grid-cols-2 gap-2">

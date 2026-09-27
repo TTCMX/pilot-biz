@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createT } from "@/lib/i18n";
 import { customerEmail, ownerEmail } from "./templates";
-import { sendEmail } from "./send";
+import { classifyEmailError, emailSender, sendEmail } from "./send";
 
 const data = {
   businessName: "Uñas <Ana>",
@@ -67,5 +67,20 @@ describe("sendEmail", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect((await sendEmail({ to: ["a@b.co"], subject: "s", html: "h", text: "t" })).sent).toBe(false);
     spy.mockRestore();
+  });
+
+  it("classifies Resend errors into fixable problems", () => {
+    expect(classifyEmailError('403 {"message":"You can only send testing emails to your own email address (you@x.com)."}')).toBe("test_sender");
+    expect(classifyEmailError('403 {"message":"The adina.pro domain is not verified. Please, add and verify your domain"}')).toBe("domain");
+    expect(classifyEmailError('401 {"message":"API key is invalid"}')).toBe("api_key");
+    expect(classifyEmailError('422 {"message":"Invalid `from` field."}')).toBe("from");
+    expect(classifyEmailError("500 boom")).toBe("other");
+  });
+
+  it("reports whether the Resend test sender is in use", () => {
+    vi.stubEnv("EMAIL_FROM", "");
+    expect(emailSender()).toEqual({ address: "onboarding@resend.dev", isTestSender: true });
+    vi.stubEnv("EMAIL_FROM", "Reservas <reservas@adina.pro>");
+    expect(emailSender()).toEqual({ address: "reservas@adina.pro", isTestSender: false });
   });
 });

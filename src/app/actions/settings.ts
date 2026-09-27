@@ -8,6 +8,9 @@ import { isValidSlug } from "@/lib/slug";
 import { toE164 } from "@/lib/phone";
 import { BUSINESS_TYPES } from "@/lib/templates";
 import { audit } from "@/lib/audit";
+import { createT } from "@/lib/i18n";
+import { classifyEmailError, isEmailEnabled, sendEmail, type EmailProblem } from "@/lib/email/send";
+import { testEmail } from "@/lib/email/templates";
 import { fail, ok, type ActionResult } from "./result";
 
 const schema = z.object({
@@ -70,4 +73,17 @@ export async function uploadLogo(form: FormData): Promise<ActionResult> {
   await supabase.from("businesses").update({ logo_url: data.publicUrl }).eq("id", business.id);
   revalidatePath("/", "layout");
   return ok(undefined);
+}
+
+/** Sends a test email to the signed-in owner and reports exactly what Resend answered. */
+export async function sendTestEmail(): Promise<ActionResult<{ to: string; problem: EmailProblem | null; error: string | null }>> {
+  const { business, user } = await requireBusiness();
+  const to = user.email ?? "";
+  if (!to) return fail("errors.invalid");
+  if (!isEmailEnabled()) return ok({ to, problem: "not_configured", error: null });
+  const t = createT(business.language);
+  const content = testEmail({ businessName: business.name }, t);
+  const result = await sendEmail({ to: [to], ...content, fromName: business.name });
+  if (result.sent) return ok({ to, problem: null, error: null });
+  return ok({ to, problem: classifyEmailError(result.error ?? ""), error: result.error ?? null });
 }

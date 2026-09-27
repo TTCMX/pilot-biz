@@ -14,6 +14,8 @@ import { localDateOf } from "@/lib/i18n/format";
 import type { AppointmentStatus, Customer, CustomerStats } from "@/lib/types";
 import { Icon, type IconName } from "@/components/Icon";
 import { Avatar } from "@/components/Avatar";
+import { WorkHistory } from "./WorkHistory";
+import type { Photo } from "@/lib/photos";
 
 export type HistoryRow = {
   id: string; start_at: string; end_at: string; status: AppointmentStatus; price: number; currency: string;
@@ -21,9 +23,9 @@ export type HistoryRow = {
   service: { name: string } | null; staff: { name: string } | null;
 };
 
-export function CustomerProfile({ customer, stats, history, intervalDays, daysSinceLast, suggestedDate, rebookHref, businessName, bookingUrl }: {
+export function CustomerProfile({ customer, stats, history, intervalDays, daysSinceLast, suggestedDate, rebookHref, businessName, bookingUrl, photos }: {
   customer: Customer; stats: CustomerStats | null; history: HistoryRow[]; intervalDays: number | null; daysSinceLast: number | null;
-  suggestedDate: string | null; rebookHref: string; businessName: string; bookingUrl: string;
+  suggestedDate: string | null; rebookHref: string; businessName: string; bookingUrl: string; photos: Photo[];
 }) {
   const { t, money, date, time, timezone } = useI18n();
   const router = useRouter();
@@ -87,6 +89,8 @@ export function CustomerProfile({ customer, stats, history, intervalDays, daysSi
           <p className="whitespace-pre-wrap">{customer.notes}</p>
         </div>
       )}
+
+      <WorkHistory photos={photos} history={history} />
 
       <section className="card overflow-x-auto p-0">
         <h2 className="h2 px-4 pt-4">{t("customer.history")}</h2>

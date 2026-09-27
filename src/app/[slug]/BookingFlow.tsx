@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { useI18n } from "@/components/I18nProvider";
 import { createPublicBooking, joinPublicWaitlist } from "@/app/actions/public";
+import { finishReferenceUpload, startReferenceUpload } from "@/app/actions/photos";
+import { PhotoPicker, uploadPhotos } from "@/components/Photos";
 import type { PublicCatalog } from "@/lib/booking/public";
 import type { MessageKey } from "@/lib/i18n";
 import { Icon } from "@/components/Icon";
@@ -141,15 +143,21 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
 
       {step === "details" && serviceId && slot && (
         <DetailsForm
-          onSubmit={async (contact) => {
+          onSubmit={async (contact, photos) => {
             const r = await createPublicBooking({ ...contact, slug, serviceId, staffId, startAt: slot, rebookToken });
             if (!r.ok) {
               if (r.error === "errors.slot_taken") setStep("time");
               return t(r.error as MessageKey);
             }
-            router.push(`/${slug}/a/${r.data.token}?new=1`);
+            // The booking is already made; photos are a bonus and never block it.
+            const token = r.data.token;
+            const upload = photos.length
+              ? await uploadPhotos(photos, (types) => startReferenceUpload(slug, token, types), (paths) => finishReferenceUpload(slug, token, paths)).catch(() => ({ count: 0, error: "errors.generic" }))
+              : null;
+            router.push(`/${slug}/a/${token}?new=1${upload?.error ? "&photos=failed" : ""}`);
             return null;
           }}
+          withPhotos
           submitLabel={t("booking.confirm")}
         />
       )}
@@ -272,10 +280,11 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
 
 type Contact = { first_name: string; last_name: string; phone: string; email: string; notes: string; website: string };
 
-function DetailsForm({ onSubmit, submitLabel, compact }: { onSubmit: (c: Contact) => Promise<string | null>; submitLabel: string; compact?: boolean }) {
+function DetailsForm({ onSubmit, submitLabel, compact, withPhotos }: { onSubmit: (c: Contact, photos: File[]) => Promise<string | null>; submitLabel: string; compact?: boolean; withPhotos?: boolean }) {
   const { t } = useI18n();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
   return (
     <form
       className="space-y-3"
@@ -289,7 +298,7 @@ function DetailsForm({ onSubmit, submitLabel, compact }: { onSubmit: (c: Contact
             email: String(f.get("email") ?? ""),
             notes: String(f.get("notes") ?? ""),
             website: String(f.get("website") ?? ""),
-          });
+          }, photos);
           if (err) setError(err);
         })
       }
@@ -302,9 +311,16 @@ function DetailsForm({ onSubmit, submitLabel, compact }: { onSubmit: (c: Contact
       <input className="input" name="phone" type="tel" placeholder={t("customer.phone")} autoComplete="tel" required />
       {!compact && <input className="input" name="email" type="email" placeholder={t("booking.email_placeholder")} autoComplete="email" />}
       {!compact && <textarea className="input" name="notes" rows={2} placeholder={`${t("booking.notes_placeholder")} (${t("common.optional")})`} />}
+      {withPhotos && (
+        <div className="rounded-[20px] bg-surface p-4">
+          <div className="text-[15px] font-semibold text-stone-900">{t("photos.reference_title")}</div>
+          <p className="mb-3 mt-0.5 text-sm text-stone-500">{t("photos.reference_hint")}</p>
+          <PhotoPicker files={photos} onChange={setPhotos} max={3} />
+        </div>
+      )}
       <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
       {error && <p className="text-sm text-bad-700">{error}</p>}
-      <button className="btn-primary w-full" disabled={pending}>{pending ? t("common.loading") : submitLabel}</button>
+      <button className="btn-primary w-full" disabled={pending}>{pending ? (photos.length ? t("photos.uploading") : t("common.loading")) : submitLabel}</button>
       {!compact && <p className="text-center text-xs text-stone-400">{t("booking.no_account_needed")}</p>}
     </form>
   );
