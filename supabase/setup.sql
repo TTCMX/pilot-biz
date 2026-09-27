@@ -223,6 +223,23 @@ create index if not exists appointments_business_start_idx on public.appointment
 create index if not exists appointments_customer_idx on public.appointments(customer_id, start_at);
 create index if not exists appointments_staff_idx on public.appointments(staff_id, start_at);
 
+-- Multi-service bookings: one appointment, several services back to back.
+-- appointments.service_id holds the main service (for the clean-up buffer),
+-- service_label the display name ("Manicure + Pedicure") and
+-- appointment_services the breakdown with each service's duration and price.
+alter table public.appointments add column if not exists service_label text;
+create table if not exists public.appointment_services (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  appointment_id uuid not null references public.appointments(id) on delete cascade,
+  service_id uuid references public.services(id) on delete set null,
+  name text not null,
+  duration_minutes int not null check (duration_minutes between 5 and 1440),
+  price numeric(12, 2) not null default 0 check (price >= 0),
+  position smallint not null default 0
+);
+create index if not exists appointment_services_appointment_idx on public.appointment_services(appointment_id, position);
+
 -- Hard guarantee against double booking (even under concurrent requests).
 do $$
 begin
@@ -272,6 +289,23 @@ create table if not exists public.appointment_photos (
 );
 create index if not exists appointment_photos_customer_idx on public.appointment_photos(customer_id, created_at desc);
 create index if not exists appointment_photos_appointment_idx on public.appointment_photos(appointment_id);
+
+-- Lookbook: finished-work photos the business chooses to show on its booking
+-- page. "portfolio" photos are uploaded straight to the Lookbook (no customer or
+-- appointment). Customer reference photos can never be published.
+alter table public.appointment_photos add column if not exists published boolean not null default false;
+alter table public.appointment_photos add column if not exists service_id uuid references public.services(id) on delete set null;
+alter table public.appointment_photos alter column customer_id drop not null;
+alter table public.appointment_photos drop constraint if exists appointment_photos_kind_check;
+alter table public.appointment_photos add constraint appointment_photos_kind_check check (kind in ('reference', 'result', 'portfolio'));
+alter table public.appointment_photos drop constraint if exists appointment_photos_published_result;
+alter table public.appointment_photos drop constraint if exists appointment_photos_published_kind;
+alter table public.appointment_photos add constraint appointment_photos_published_kind check (not published or kind in ('result', 'portfolio'));
+alter table public.appointment_photos drop constraint if exists appointment_photos_customer_kind;
+alter table public.appointment_photos add constraint appointment_photos_customer_kind check ((kind = 'portfolio') = (customer_id is null));
+update public.appointment_photos p set service_id = a.service_id
+  from public.appointments a where p.appointment_id = a.id and p.service_id is null;
+create index if not exists appointment_photos_lookbook_idx on public.appointment_photos(business_id, created_at desc) where published;
 
 -- ---------------------------------------------------------------------
 -- Audit log
@@ -337,6 +371,7 @@ alter table public.customers enable row level security;
 alter table public.appointments enable row level security;
 alter table public.waitlist_entries enable row level security;
 alter table public.appointment_photos enable row level security;
+alter table public.appointment_services enable row level security;
 alter table public.audit_log enable row level security;
 
 drop policy if exists "profiles self read" on public.profiles;
@@ -357,7 +392,7 @@ create policy "membership self read" on public.business_members for select
 do $$
 declare t text;
 begin
-  foreach t in array array['staff','services','staff_services','availability_rules','availability_exceptions','customers','appointments','waitlist_entries','appointment_photos']
+  foreach t in array array['staff','services','staff_services','availability_rules','availability_exceptions','customers','appointments','waitlist_entries','appointment_photos','appointment_services']
   loop
     execute format('drop policy if exists "tenant access" on public.%I', t);
     execute format(

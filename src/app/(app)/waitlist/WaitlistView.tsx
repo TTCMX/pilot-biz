@@ -92,7 +92,7 @@ export function WaitlistView({ rows, services, staff, businessName }: { rows: Wa
                       className="h-9 rounded-lg bg-ok-100 px-3 text-sm font-medium text-ok-700 transition hover:brightness-95 first-letter:uppercase"
                       onClick={() =>
                         confirm(t("waitlist.book_confirm", { date: `${date(m.start)} ${time(m.start)}` })) &&
-                        run(() => createOwnerAppointment({ customerId: r.customer_id, serviceId: r.service_id, staffId: r.staff_id ?? m.staffIds[0], startAt: m.start, waitlistEntryId: r.id }))
+                        run(() => createOwnerAppointment({ customerId: r.customer_id, serviceIds: [r.service_id], staffId: r.staff_id ?? m.staffIds[0], startAt: m.start, waitlistEntryId: r.id }))
                       }
                     >
                       {date(m.start)} {time(m.start)}

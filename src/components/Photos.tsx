@@ -10,7 +10,7 @@ import type { MessageKey } from "@/lib/i18n";
 // Shared photo UI: pick → shrink in the browser → upload straight to Storage
 // with the signed URLs the server hands out → confirm.
 
-export type PhotoView = { id: string; kind: "reference" | "result"; url: string; created_at?: string };
+export type PhotoView = { id: string; kind: "reference" | "result" | "portfolio"; url: string; created_at?: string; published?: boolean };
 type Start = (types: string[]) => Promise<ActionResult<{ path: string; token: string }[]>>;
 type Finish = (paths: string[]) => Promise<ActionResult<{ count: number }>>;
 
@@ -105,8 +105,10 @@ export function PhotoPicker({ files, onChange, max }: { files: File[]; onChange:
   );
 }
 
-/** Grid of saved photos; each opens full size in a new tab. */
-export function PhotoGrid({ photos, onDelete, size = "md" }: { photos: PhotoView[]; onDelete?: (id: string) => void; size?: "sm" | "md" }) {
+/** Grid of saved photos; each opens full size in a new tab. Finished-work photos can be toggled in/out of the Lookbook. */
+export function PhotoGrid({ photos, onDelete, onTogglePublish, size = "md" }: {
+  photos: PhotoView[]; onDelete?: (id: string) => void; onTogglePublish?: (id: string, published: boolean) => void; size?: "sm" | "md";
+}) {
   const { t } = useI18n();
   const box = size === "sm" ? "size-20" : "size-24 sm:size-28";
   return (
@@ -117,6 +119,21 @@ export function PhotoGrid({ photos, onDelete, size = "md" }: { photos: PhotoView
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt="" loading="lazy" className="size-full object-cover transition-transform group-hover:scale-[1.03]" />
           </a>
+          {onTogglePublish && p.kind !== "reference" && (
+            <button
+              type="button"
+              onClick={() => onTogglePublish(p.id, !p.published)}
+              aria-pressed={!!p.published}
+              title={p.published ? t("photos.unpublish") : t("photos.publish")}
+              aria-label={p.published ? t("photos.unpublish") : t("photos.publish")}
+              className={`absolute bottom-1 left-1 flex h-7 items-center gap-1 rounded-full px-2 text-[11px] font-medium transition-colors ${
+                p.published ? "bg-brand-600 text-white" : "bg-forest/60 text-white hover:bg-forest/80"
+              }`}
+            >
+              <Icon name="star" size={13} className={p.published ? "fill-current" : ""} />
+              {p.published && size === "md" && t("photos.published")}
+            </button>
+          )}
           {onDelete && (
             <button
               type="button"

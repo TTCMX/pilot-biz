@@ -12,6 +12,7 @@ import { setAppointmentStatus } from "@/app/actions/appointments";
 import { formatPhone, whatsappLink } from "@/lib/phone";
 import { localDateOf } from "@/lib/i18n/format";
 import type { AppointmentStatus, Customer, CustomerStats } from "@/lib/types";
+import { serviceName } from "@/lib/types";
 import { Icon, type IconName } from "@/components/Icon";
 import { Avatar } from "@/components/Avatar";
 import { WorkHistory } from "./WorkHistory";
@@ -20,7 +21,7 @@ import type { Photo } from "@/lib/photos";
 export type HistoryRow = {
   id: string; start_at: string; end_at: string; status: AppointmentStatus; price: number; currency: string;
   service_id: string; staff_id: string; source: string;
-  service: { name: string } | null; staff: { name: string } | null;
+  service_label?: string | null; service: { name: string } | null; staff: { name: string } | null;
 };
 
 export function CustomerProfile({ customer, stats, history, intervalDays, daysSinceLast, suggestedDate, rebookHref, businessName, bookingUrl, photos }: {
@@ -114,7 +115,7 @@ export function CustomerProfile({ customer, stats, history, intervalDays, daysSi
                 return (
                   <tr key={a.id}>
                     <td className="whitespace-nowrap px-4 py-2 first-letter:uppercase">{date(a.start_at)} <span className="text-stone-400">{time(a.start_at)}</span></td>
-                    <td className="px-4 py-2">{a.service?.name}</td>
+                    <td className="px-4 py-2">{serviceName(a)}</td>
                     <td className="hidden px-4 py-2 sm:table-cell">{a.staff?.name}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{money(Number(a.price), a.currency)}</td>
                     <td className="px-4 py-2"><StatusBadge status={a.status} /></td>

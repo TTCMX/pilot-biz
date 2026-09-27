@@ -8,7 +8,7 @@ Todo lo que tienes que hacer fuera del código está en esta página. Tiempo est
 
 1. Crea un proyecto en <https://supabase.com> (elige la región más cercana a tus clientes).
 2. Ve a **SQL Editor → New query**, pega **todo** el contenido de [`supabase/setup.sql`](supabase/setup.sql) y pulsa **Run**.
-   - Crea tablas, índices, Row Level Security, la vista de métricas de clientes, la función `create_business`, el bucket público `logos` y el bucket privado `photos` (fotos de referencia y de trabajos, máx. 8 MB, solo JPG/PNG/WEBP).
+   - Crea tablas, índices, Row Level Security, la vista de métricas de clientes, la función `create_business`, el bucket público `logos` y el bucket privado `photos` (fotos de referencia, de trabajos y del Lookbook; máx. 8 MB, solo JPG/PNG/WEBP).
    - Puedes volver a ejecutarlo sin problema (es idempotente) cuando haya actualizaciones. Las actualizaciones también vienen sueltas en [`supabase/updates/`](supabase/updates/) por si prefieres correr solo lo nuevo.
 3. **Authentication → Sign In / Providers → Email**
    - Recomendado para el onboarding de <10 min: **desactiva "Confirm email"**. La dueña entra directo a crear su negocio.

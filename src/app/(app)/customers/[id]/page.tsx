@@ -15,7 +15,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
     supabase.from("customer_stats").select("*").eq("customer_id", id).maybeSingle(),
     supabase
       .from("appointments")
-      .select("id, start_at, end_at, status, price, currency, service_id, staff_id, source, service:services(name), staff:staff(name)")
+      .select("id, start_at, end_at, status, price, currency, service_id, staff_id, source, service_label, service:services(name), staff:staff(name)")
       .eq("customer_id", id)
       .eq("business_id", business.id)
       .order("start_at", { ascending: false })

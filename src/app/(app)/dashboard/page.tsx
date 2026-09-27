@@ -6,7 +6,7 @@ import { dayBounds, formatDate, formatMoney, formatTime, localDateOf, todayIn } 
 import { loadBookingData } from "@/lib/booking/service";
 import { openSpots, typicalDuration } from "@/lib/metrics/capacity";
 import { periodBounds, revenueSummary, type Period } from "@/lib/metrics/revenue";
-import { customerName, type AppointmentStatus } from "@/lib/types";
+import { customerName, type AppointmentStatus, serviceName } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { HeroShapes, Icon } from "@/components/Icon";
 
@@ -15,13 +15,13 @@ export const metadata = { title: "Dashboard" };
 type Row = {
   id: string; start_at: string; end_at: string; status: AppointmentStatus; price: number; currency: string; source: string; created_at: string;
   customer: { id: string; first_name: string; last_name: string | null } | null;
+  service_label?: string | null;
   service: { name: string } | null;
   staff: { name: string } | null;
 };
 
 export default async function DashboardPage() {
-  const { business, supabase } = await requireBusiness();
-  const profile = await getProfile();
+  const [{ business, supabase }, profile] = await Promise.all([requireBusiness(), getProfile()]);
   const t = createT(business.language);
   const f = { locale: business.locale, timezone: business.timezone };
   const money = (n: number) => formatMoney(n, business.currency, business.locale);
@@ -37,14 +37,14 @@ export default async function DashboardPage() {
   const [appts, recent, waitlist, bookingData] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, start_at, end_at, status, price, currency, source, created_at, customer:customers(id, first_name, last_name), service:services(name), staff:staff(name)")
+      .select("id, start_at, end_at, status, price, currency, source, created_at, customer:customers(id, first_name, last_name), service_label, service:services(name), staff:staff(name)")
       .eq("business_id", business.id)
       .gte("start_at", rangeStart)
       .lt("start_at", rangeEnd)
       .order("start_at"),
     supabase
       .from("appointments")
-      .select("id, start_at, end_at, status, price, currency, source, created_at, customer:customers(id, first_name, last_name), service:services(name), staff:staff(name)")
+      .select("id, start_at, end_at, status, price, currency, source, created_at, customer:customers(id, first_name, last_name), service_label, service:services(name), staff:staff(name)")
       .eq("business_id", business.id)
       .eq("source", "booking_page")
       .gte("created_at", now.minus({ hours: 48 }).toUTC().toISO()!)
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
   if (!next) {
     const { data } = await supabase
       .from("appointments")
-      .select("id, start_at, end_at, status, price, currency, source, created_at, customer:customers(id, first_name, last_name), service:services(name), staff:staff(name)")
+      .select("id, start_at, end_at, status, price, currency, source, created_at, customer:customers(id, first_name, last_name), service_label, service:services(name), staff:staff(name)")
       .eq("business_id", business.id)
       .in("status", ["scheduled", "confirmed"])
       .gte("start_at", nowIso)
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
               <div className="relative text-sm text-white/80">{t("dashboard.next_appointment")}</div>
               <div className="relative mt-2 max-w-[75%] font-display text-[27px] font-light leading-[1.1]">{customerName(next.customer)}</div>
               <div className="relative mt-3 text-[15px] text-white/90">
-                {[next.service?.name, next.staff?.name].filter(Boolean).join(" · ")}
+                {[serviceName(next), next.staff?.name].filter(Boolean).join(" · ")}
               </div>
               <div className="relative mt-1 flex items-center gap-1.5 text-[15px] font-medium first-letter:uppercase">
                 <Icon name="schedule" size={18} />
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
                 {newBookings.map((b) => (
                   <li key={b.id} className="truncate text-stone-700">
                     <Link href={`/customers/${b.customer?.id}`} className="font-semibold text-stone-900 underline-offset-2 hover:underline">{customerName(b.customer)}</Link>
-                    {" · "}{b.service?.name}{" · "}{formatDate(b.start_at, f)} {formatTime(b.start_at, f)}
+                    {" · "}{serviceName(b)}{" · "}{formatDate(b.start_at, f)} {formatTime(b.start_at, f)}
                   </li>
                 ))}
               </ul>
@@ -151,7 +151,7 @@ export default async function DashboardPage() {
                 {activeToday.map((a) => (
                   <li key={a.id} className="flex items-center gap-3 py-3 text-sm">
                     <span className="w-[4.5rem] shrink-0 whitespace-nowrap font-medium tabular-nums text-stone-900">{formatTime(a.start_at, f)}</span>
-                    <span className="min-w-0 flex-1 truncate text-stone-700">{customerName(a.customer)} · {a.service?.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-stone-700">{customerName(a.customer)} · {serviceName(a)}</span>
                     <StatusBadge status={a.status} />
                   </li>
                 ))}

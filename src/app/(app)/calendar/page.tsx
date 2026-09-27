@@ -20,7 +20,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const [appts, staff, services, staffServices, rules, exceptions] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, customer_id, staff_id, service_id, start_at, end_at, status, price, currency, notes, source, customer:customers(id, first_name, last_name, phone), service:services(name, duration_minutes)")
+      .select("id, customer_id, staff_id, service_id, start_at, end_at, status, price, currency, notes, source, customer:customers(id, first_name, last_name, phone), service_label, service:services(name, duration_minutes)")
       .eq("business_id", business.id)
       .gte("start_at", from.toUTC().toISO()!)
       .lt("start_at", to.toUTC().toISO()!)

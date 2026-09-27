@@ -8,10 +8,19 @@ import type { Business } from "@/lib/types";
 
 export const getSupabase = cache(createClient);
 
-export const getUser = cache(async () => {
+export type AuthUser = { id: string; email: string | null; user_metadata: Record<string, unknown> };
+
+/**
+ * The signed-in user from the verified session JWT. getClaims() checks the token
+ * signature locally with the project's JWKS (no round trip to Supabase Auth on
+ * each request); projects still on a shared-secret JWT fall back to a server check.
+ */
+export const getUser = cache(async (): Promise<AuthUser | null> => {
   const supabase = await getSupabase();
-  const { data } = await supabase.auth.getUser();
-  return data.user;
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  return { id: claims.sub, email: (claims.email as string | undefined) ?? null, user_metadata: (claims.user_metadata as Record<string, unknown> | undefined) ?? {} };
 });
 
 export const getProfile = cache(async () => {

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { PhotoGrid, PhotoUploadButton, type PhotoView } from "@/components/Photos";
-import { deletePhoto, finishPhotoUpload, getAppointmentPhotos, startPhotoUpload } from "@/app/actions/photos";
+import { deletePhoto, finishPhotoUpload, getAppointmentPhotos, setPhotoPublished, startPhotoUpload } from "@/app/actions/photos";
 
 /** Owner view of one appointment's photos: the customer's references and the finished work. */
 export function AppointmentPhotos({ appointmentId }: { appointmentId: string }) {
@@ -19,6 +19,7 @@ export function AppointmentPhotos({ appointmentId }: { appointmentId: string }) 
   const references = photos?.filter((p) => p.kind === "reference") ?? [];
   const results = photos?.filter((p) => p.kind === "result") ?? [];
   const remove = (id: string) => run(async () => { await deletePhoto(id); load(); });
+  const publish = (id: string, published: boolean) => run(async () => { await setPhotoPublished(id, published); load(); });
 
   return (
     <div className="space-y-3 rounded-[20px] bg-stone-100/70 p-4">
@@ -35,7 +36,7 @@ export function AppointmentPhotos({ appointmentId }: { appointmentId: string }) 
           )}
           <div>
             <div className="mb-2 text-sm text-stone-500">{t("photos.result")}</div>
-            {results.length ? <PhotoGrid photos={results} size="sm" onDelete={remove} /> : <p className="muted">{t("photos.empty")}</p>}
+            {results.length ? <PhotoGrid photos={results} size="sm" onDelete={remove} onTogglePublish={publish} /> : <p className="muted">{t("photos.empty")}</p>}
           </div>
           <PhotoUploadButton
             label={t("photos.add_result")}

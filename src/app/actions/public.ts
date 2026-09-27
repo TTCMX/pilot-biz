@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getPublicBusiness } from "@/lib/booking/public";
-import { BookingError, createAppointment, findOrCreateCustomer, rescheduleAppointment } from "@/lib/booking/service";
+import { BookingError, MAX_SERVICES_PER_BOOKING, createAppointment, findOrCreateCustomer, rescheduleAppointment } from "@/lib/booking/service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toE164 } from "@/lib/phone";
 import { audit } from "@/lib/audit";
@@ -27,7 +27,7 @@ const contact = z.object({
 
 const bookingSchema = contact.extend({
   slug: z.string().max(60),
-  serviceId: uuid,
+  serviceIds: z.array(uuid).min(1).max(MAX_SERVICES_PER_BOOKING),
   staffId: uuid.nullable(),
   startAt: z.iso.datetime({ offset: true }),
   rebookToken: uuid.optional().nullable(),
@@ -57,7 +57,7 @@ export async function createPublicBooking(input: z.input<typeof bookingSchema>):
     }
     const customer = await findOrCreateCustomer(db, business, { ...v, source: "booking_page" });
     const appt = await createAppointment(db, business, {
-      serviceId: v.serviceId,
+      serviceIds: v.serviceIds,
       staffId: v.staffId,
       startAt: v.startAt,
       customerId: customer.id,

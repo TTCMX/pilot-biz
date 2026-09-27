@@ -4,9 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
 import { PhotoGrid, PhotoUploadButton } from "@/components/Photos";
-import { deletePhoto, finishPhotoUpload, startPhotoUpload } from "@/app/actions/photos";
+import { deletePhoto, finishPhotoUpload, setPhotoPublished, startPhotoUpload } from "@/app/actions/photos";
 import type { Photo } from "@/lib/photos";
 import type { HistoryRow } from "./CustomerProfile";
+import { serviceName } from "@/lib/types";
 
 /** The customer's photo history, grouped by visit: references she sent and the finished work. */
 export function WorkHistory({ photos, history }: { photos: Photo[]; history: HistoryRow[] }) {
@@ -24,6 +25,7 @@ export function WorkHistory({ photos, history }: { photos: Photo[]; history: His
   }
   const groups = [...byVisit.entries()].map(([id, list]) => ({ id, visit: history.find((a) => a.id === id), list }));
   const remove = (id: string) => run(async () => { await deletePhoto(id); router.refresh(); });
+  const publish = (id: string, published: boolean) => run(async () => { await setPhotoPublished(id, published); router.refresh(); });
 
   return (
     <section className="card space-y-4">
@@ -35,12 +37,12 @@ export function WorkHistory({ photos, history }: { photos: Photo[]; history: His
         return (
           <div key={id} className="space-y-2 border-t border-brand-100 pt-4 first:border-t-0 first:pt-0">
             <div className="text-sm text-stone-500 first-letter:uppercase">
-              {visit ? `${date(visit.start_at, { day: "numeric", month: "long", year: "numeric" })} · ${visit.service?.name ?? ""}` : date(list[0].created_at)}
+              {visit ? `${date(visit.start_at, { day: "numeric", month: "long", year: "numeric" })} · ${serviceName(visit)}` : date(list[0].created_at)}
             </div>
             {results.length > 0 && (
               <div>
                 <div className="mb-1.5 text-xs text-stone-500">{t("photos.result")}</div>
-                <PhotoGrid photos={results} onDelete={remove} />
+                <PhotoGrid photos={results} onDelete={remove} onTogglePublish={publish} />
               </div>
             )}
             {refs.length > 0 && (
@@ -57,7 +59,7 @@ export function WorkHistory({ photos, history }: { photos: Photo[]; history: His
           <select className="input h-11 w-auto max-w-full" value={target} onChange={(e) => setTarget(e.target.value)} aria-label={t("appointment.when")}>
             {visits.slice(0, 30).map((a) => (
               <option key={a.id} value={a.id}>
-                {date(a.start_at, { day: "numeric", month: "short", year: "numeric" })} · {a.service?.name}
+                {date(a.start_at, { day: "numeric", month: "short", year: "numeric" })} · {serviceName(a)}
               </option>
             ))}
           </select>

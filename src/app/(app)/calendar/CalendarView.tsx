@@ -17,6 +17,7 @@ import { localTimeOf, zonedToUtc } from "@/lib/i18n/format";
 import { formatPhone } from "@/lib/phone";
 import type { MessageKey } from "@/lib/i18n";
 import type { AppointmentStatus } from "@/lib/types";
+import { serviceName } from "@/lib/types";
 
 export type CalendarAppointment = {
   id: string;
@@ -31,6 +32,7 @@ export type CalendarAppointment = {
   notes: string | null;
   source: string;
   customer: { id: string; first_name: string; last_name: string | null; phone: string | null } | null;
+  service_label?: string | null;
   service: { name: string; duration_minutes: number } | null;
 };
 
@@ -318,7 +320,7 @@ export function CalendarView(props: Props) {
                         style={{ top, height, left: `calc(${(lane / lanes) * 100}% + 2px)`, width: `calc(${100 / lanes}% - 6px)`, ...blockStyle(a.status, color) }}
                       >
                         <div className={`truncate font-medium ${a.status === "cancelled" ? "line-through" : ""}`}>{a.customer?.first_name} {a.customer?.last_name}</div>
-                        <div className="truncate opacity-90">{time(a.start_at)} · {a.service?.name}</div>
+                        <div className="truncate opacity-90">{time(a.start_at)} · {serviceName(a)}</div>
                         {view === "week" && staff.length > 1 && height > 56 && <div className="truncate opacity-80">{staffById.get(a.staff_id)?.name}</div>}
                         {height > 50 && a.status !== "scheduled" && a.status !== "confirmed" && <div className="mt-0.5 truncate font-medium opacity-90">{t(`status.${a.status}`)}</div>}
                       </button>
@@ -416,7 +418,7 @@ function AppointmentDetails({ appt, staff, pending, error, onStatus, onMove, onN
         </div>
       </Link>
       <dl className="grid grid-cols-2 gap-4 rounded-2xl bg-stone-100 p-4 text-sm">
-        <div><dt className="text-stone-500">{t("appointment.service")}</dt><dd className="font-medium">{appt.service?.name}</dd></div>
+        <div><dt className="text-stone-500">{t("appointment.service")}</dt><dd className="font-medium">{serviceName(appt)}</dd></div>
         <div><dt className="text-stone-500">{t("appointment.staff")}</dt><dd className="font-medium">{staff.find((s) => s.id === appt.staff_id)?.name}</dd></div>
         <div><dt className="text-stone-500">{t("appointment.when")}</dt><dd className="font-medium first-letter:uppercase">{dateTime(appt.start_at)}–{time(appt.end_at)}</dd></div>
         <div><dt className="text-stone-500">{t("appointment.price")}</dt><dd className="font-medium">{money(Number(appt.price), appt.currency)}</dd></div>

@@ -30,7 +30,7 @@ async function sendAppointmentEmails(event: AppointmentEvent, appointmentId: str
   const db = createAdminClient();
   const { data } = await db
     .from("appointments")
-    .select("start_at, price, currency, notes, public_token, business:businesses(*), customer:customers(first_name, last_name, email, phone), service:services(name), staff:staff(name)")
+    .select("start_at, price, currency, notes, public_token, service_label, business:businesses(*), customer:customers(first_name, last_name, email, phone), service:services(name), staff:staff(name)")
     .eq("id", appointmentId)
     .maybeSingle();
   if (!data) return;
@@ -43,7 +43,7 @@ async function sendAppointmentEmails(event: AppointmentEvent, appointmentId: str
   const base = {
     businessName: business.name,
     customerName: customerName(customer),
-    serviceName: (data.service as unknown as { name: string } | null)?.name ?? "",
+    serviceName: data.service_label || ((data.service as unknown as { name: string } | null)?.name ?? ""),
     staffName: (data.staff as unknown as { name: string } | null)?.name ?? "",
     when: formatDateTime(data.start_at, f),
     price: formatMoney(Number(data.price), data.currency, business.locale),

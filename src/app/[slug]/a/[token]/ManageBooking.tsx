@@ -12,11 +12,12 @@ import { HeroShapes, Icon } from "@/components/Icon";
 import { PhotoGrid, PhotoUploadButton, type PhotoView } from "@/components/Photos";
 import { finishReferenceUpload, startReferenceUpload } from "@/app/actions/photos";
 import type { AppointmentStatus } from "@/lib/types";
+import { serviceName } from "@/lib/types";
 
 type Appt = {
   start_at: string; end_at: string; status: AppointmentStatus; price: number; currency: string;
   service_id: string; staff_id: string; public_token: string;
-  service: { name: string; duration_minutes: number } | null; staff: { name: string } | null; customer: { first_name: string } | null;
+  service_label?: string | null; service: { name: string; duration_minutes: number } | null; staff: { name: string } | null; customer: { first_name: string } | null;
 };
 
 export function ManageBooking({ slug, isNew, appt, address, businessPhone, photos, photosFailed }: { slug: string; isNew: boolean; appt: Appt; address: string; businessPhone: string | null; photos: PhotoView[]; photosFailed: boolean }) {
@@ -62,7 +63,7 @@ export function ManageBooking({ slug, isNew, appt, address, businessPhone, photo
 
       <div className="rounded-[20px] bg-surface p-5">
         <div className="flex items-start justify-between gap-3">
-          <div className="text-[15px] font-semibold text-stone-900">{appt.service?.name}</div>
+          <div className="text-[15px] font-semibold text-stone-900">{serviceName(appt)}</div>
           <span className={`chip shrink-0 ${appt.status === "cancelled" ? "bg-bad-100 text-bad-700" : appt.status === "confirmed" ? "bg-ok-100 text-ok-700" : "bg-brand-100 text-stone-900"}`}>{t(`status.${appt.status}`)}</span>
         </div>
         <div className="mt-1 text-[15px] text-stone-900 first-letter:uppercase">{longDate(appt.start_at)} · {time(appt.start_at)}–{time(appt.end_at)}</div>
@@ -105,7 +106,7 @@ export function ManageBooking({ slug, isNew, appt, address, businessPhone, photo
           </div>
           <SlotPicker
             slug={slug}
-            serviceId={appt.service_id}
+            serviceIds={[appt.service_id]}
             staffId={appt.staff_id}
             token={appt.public_token}
             value={null}
