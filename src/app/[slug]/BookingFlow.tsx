@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { DateTime } from "luxon";
 import { useI18n } from "@/components/I18nProvider";
 import { createPublicBooking, joinPublicWaitlist } from "@/app/actions/public";
-import { finishReferenceUpload, startReferenceUpload } from "@/app/actions/photos";
+import { attachLook, finishReferenceUpload, startReferenceUpload } from "@/app/actions/photos";
+import { Modal } from "@/components/Modal";
 import { PhotoPicker, uploadPhotos } from "@/components/Photos";
 import type { PublicCatalog } from "@/lib/booking/public";
 import type { MessageKey } from "@/lib/i18n";
@@ -15,9 +16,12 @@ import { Avatar } from "@/components/Avatar";
 type Step = "service" | "staff" | "time" | "details";
 type DaySlots = { date: string; slots: { start: string; end: string }[] };
 
-export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, rebookToken, isTest }: {
+export type PublicLook = { id: string; url: string; serviceId: string };
+
+export function BookingFlow({ slug, catalog, looks, initialServiceId, initialStaffId, rebookToken, isTest }: {
   slug: string;
   catalog: PublicCatalog;
+  looks: PublicLook[];
   initialServiceId: string | null;
   initialStaffId: string | null;
   rebookToken: string | null;
@@ -37,11 +41,14 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
   const [staffId, setStaffId] = useState<string | null>(validService && eligibleFor(validService).some((s) => s.id === initialStaffId) ? initialStaffId : null);
   const [step, setStep] = useState<Step>(validService ? (eligibleFor(validService).length > 1 && !initialStaffId ? "staff" : "time") : "service");
   const [slot, setSlot] = useState<string | null>(null);
+  const [look, setLook] = useState<PublicLook | null>(null);
+  const [viewing, setViewing] = useState<PublicLook | null>(null);
 
   const service = services.find((s) => s.id === serviceId);
   const eligible = serviceId ? eligibleFor(serviceId) : [];
 
-  function chooseService(id: string) {
+  function chooseService(id: string, chosenLook: PublicLook | null = null) {
+    setLook(chosenLook);
     setServiceId(id);
     setSlot(null);
     const e = eligibleFor(id);
@@ -73,14 +80,48 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
       )}
 
       {step !== "service" && service && (
-        <div className="mb-6 rounded-[20px] bg-surface p-5">
+        <div className="mb-6 flex gap-4 rounded-[20px] bg-surface p-5">
+          {look && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={look.url} alt="" className="h-20 w-16 shrink-0 rounded-2xl object-cover" />
+          )}
+          <div className="min-w-0 flex-1">
+          {look && <div className="mb-0.5 text-xs text-stone-500">{t("lookbook.your_look")}</div>}
           <div className="text-[15px] font-semibold text-stone-900">{service.name}</div>
           <div className="mt-0.5 text-sm text-stone-500">
             {duration(service.duration_minutes)} · {money(service.price, service.currency)}
             {step !== "staff" && eligible.length > 1 && ` · ${staff.find((s) => s.id === staffId)?.name ?? t("booking.any_staff")}`}
           </div>
           {slot && step === "details" && <SlotLabel iso={slot} />}
+          </div>
         </div>
+      )}
+
+      {step === "service" && looks.length > 0 && (
+        <section className="mb-8">
+          <h2 className="h2 text-[24px]">{t("lookbook.public_title")}</h2>
+          <p className="mb-3 mt-1 text-sm text-stone-500">{t("lookbook.public_hint")}</p>
+          <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2 sm:-mx-6 sm:px-6">
+            {looks.map((l) => (
+              <button key={l.id} onClick={() => setViewing(l)} className="group relative aspect-[4/5] w-40 shrink-0 snap-start overflow-hidden rounded-[20px] bg-stone-100 text-left">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={l.url} alt="" loading="lazy" className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
+                <span className="absolute inset-x-2 bottom-2 truncate rounded-full bg-surface/90 px-3 py-1.5 text-xs font-medium text-stone-900">
+                  {services.find((s) => s.id === l.serviceId)?.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {viewing && (
+        <LookSheet
+          look={viewing}
+          service={services.find((s) => s.id === viewing.serviceId)!}
+          onClose={() => setViewing(null)}
+          onChoose={() => { const l = viewing; setViewing(null); chooseService(l.serviceId, l); }}
+        />
       )}
 
       {step === "service" && (
@@ -151,13 +192,15 @@ export function BookingFlow({ slug, catalog, initialServiceId, initialStaffId, r
             }
             // The booking is already made; photos are a bonus and never block it.
             const token = r.data.token;
+            const attached = look ? await attachLook(slug, token, look.id).catch(() => ({ ok: false })) : null;
             const upload = photos.length
               ? await uploadPhotos(photos, (types) => startReferenceUpload(slug, token, types), (paths) => finishReferenceUpload(slug, token, paths)).catch(() => ({ count: 0, error: "errors.generic" }))
               : null;
-            router.push(`/${slug}/a/${token}?new=1${upload?.error ? "&photos=failed" : ""}`);
+            router.push(`/${slug}/a/${token}?new=1${upload?.error || attached?.ok === false ? "&photos=failed" : ""}`);
             return null;
           }}
           withPhotos
+          maxPhotos={look ? 2 : 3}
           submitLabel={t("booking.confirm")}
         />
       )}
@@ -280,7 +323,7 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
 
 type Contact = { first_name: string; last_name: string; phone: string; email: string; notes: string; website: string };
 
-function DetailsForm({ onSubmit, submitLabel, compact, withPhotos }: { onSubmit: (c: Contact, photos: File[]) => Promise<string | null>; submitLabel: string; compact?: boolean; withPhotos?: boolean }) {
+function DetailsForm({ onSubmit, submitLabel, compact, withPhotos, maxPhotos = 3 }: { onSubmit: (c: Contact, photos: File[]) => Promise<string | null>; submitLabel: string; compact?: boolean; withPhotos?: boolean; maxPhotos?: number }) {
   const { t } = useI18n();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -315,7 +358,7 @@ function DetailsForm({ onSubmit, submitLabel, compact, withPhotos }: { onSubmit:
         <div className="rounded-[20px] bg-surface p-4">
           <div className="text-[15px] font-semibold text-stone-900">{t("photos.reference_title")}</div>
           <p className="mb-3 mt-0.5 text-sm text-stone-500">{t("photos.reference_hint")}</p>
-          <PhotoPicker files={photos} onChange={setPhotos} max={3} />
+          <PhotoPicker files={photos} onChange={setPhotos} max={maxPhotos} />
         </div>
       )}
       <input name="website" className="hidden" tabIndex={-1} autoComplete="off" aria-hidden="true" />
@@ -358,5 +401,22 @@ function WaitlistForm({ slug, serviceId, staffId, date }: { slug: string; servic
         }}
       />
     </div>
+  );
+}
+
+/** Full view of a look with the one action that matters: book it. */
+function LookSheet({ look, service, onClose, onChoose }: { look: PublicLook; service: PublicCatalog["services"][number]; onClose: () => void; onChoose: () => void }) {
+  const { t, money, duration } = useI18n();
+  return (
+    <Modal open onClose={onClose} title={service.name}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={look.url} alt="" className="aspect-[4/5] w-full rounded-[26px] object-cover" />
+      <p className="mt-4 text-[15px] text-stone-500">{duration(service.duration_minutes)} · {money(service.price, service.currency)}</p>
+      {service.description && <p className="mt-1 text-sm text-stone-500">{service.description}</p>}
+      <button className="btn-primary mt-5 w-full" onClick={onChoose}>
+        <Icon name="sparkle" size={18} />
+        {t("lookbook.want")}
+      </button>
+    </Modal>
   );
 }

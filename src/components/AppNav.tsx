@@ -13,6 +13,7 @@ const ITEMS: { href: string; key: MessageKey; icon: IconName; mobile: boolean }[
   { href: "/waitlist", key: "nav.waitlist", icon: "hourglass", mobile: true },
   { href: "/services", key: "nav.services", icon: "cut", mobile: false },
   { href: "/staff", key: "nav.staff", icon: "team", mobile: false },
+  { href: "/lookbook", key: "nav.lookbook", icon: "gallery", mobile: false },
   { href: "/settings", key: "nav.settings", icon: "settings", mobile: true },
 ];
 

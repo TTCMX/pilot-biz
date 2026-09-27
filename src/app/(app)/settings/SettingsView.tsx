@@ -39,9 +39,10 @@ export function SettingsView({ business, bookingUrl, appUrl, email }: { business
     <div className="mx-auto max-w-3xl space-y-5">
       <h1 className="h1">{t("nav.settings")}</h1>
 
-      <div className="grid grid-cols-2 gap-2 md:hidden">
-        <Link href="/services" className="btn-tonal"><Icon name="cut" size={18} />{t("nav.services")}</Link>
-        <Link href="/staff" className="btn-tonal"><Icon name="team" size={18} />{t("nav.staff")}</Link>
+      <div className="grid grid-cols-3 gap-2 md:hidden">
+        <Link href="/services" className="btn-tonal px-2"><Icon name="cut" size={18} />{t("nav.services")}</Link>
+        <Link href="/staff" className="btn-tonal px-2"><Icon name="team" size={18} />{t("nav.staff")}</Link>
+        <Link href="/lookbook" className="btn-tonal px-2"><Icon name="gallery" size={18} />{t("nav.lookbook")}</Link>
       </div>
 
       <section className="card space-y-3">

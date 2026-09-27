@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
 import { PhotoGrid, PhotoUploadButton } from "@/components/Photos";
-import { deletePhoto, finishPhotoUpload, startPhotoUpload } from "@/app/actions/photos";
+import { deletePhoto, finishPhotoUpload, setPhotoPublished, startPhotoUpload } from "@/app/actions/photos";
 import type { Photo } from "@/lib/photos";
 import type { HistoryRow } from "./CustomerProfile";
 
@@ -24,6 +24,7 @@ export function WorkHistory({ photos, history }: { photos: Photo[]; history: His
   }
   const groups = [...byVisit.entries()].map(([id, list]) => ({ id, visit: history.find((a) => a.id === id), list }));
   const remove = (id: string) => run(async () => { await deletePhoto(id); router.refresh(); });
+  const publish = (id: string, published: boolean) => run(async () => { await setPhotoPublished(id, published); router.refresh(); });
 
   return (
     <section className="card space-y-4">
@@ -40,7 +41,7 @@ export function WorkHistory({ photos, history }: { photos: Photo[]; history: His
             {results.length > 0 && (
               <div>
                 <div className="mb-1.5 text-xs text-stone-500">{t("photos.result")}</div>
-                <PhotoGrid photos={results} onDelete={remove} />
+                <PhotoGrid photos={results} onDelete={remove} onTogglePublish={publish} />
               </div>
             )}
             {refs.length > 0 && (
