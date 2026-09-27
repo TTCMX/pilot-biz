@@ -307,6 +307,14 @@ export const en = {
 
   // public booking
   "booking.select_service": "Choose a service",
+  "booking.no_staff_combo": "No one on the team does all of these together. Choose another combination.",
+  "booking.max_services": "Up to {count} services per booking.",
+  "booking.continue": "Continue",
+  "booking.selected_count": "{count} selected",
+  "booking.select_services_hint": "You can choose more than one; we'll do them back to back.",
+  "booking.total": "Total",
+  "booking.add_service": "Add another service",
+  "appointment.services": "Services",
   "booking.select_staff": "Choose a professional",
   "booking.select_time": "Choose a time",
   "booking.any_staff": "Any professional",

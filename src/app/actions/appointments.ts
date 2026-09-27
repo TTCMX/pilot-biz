@@ -3,13 +3,14 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireBusiness } from "@/lib/context";
-import { BookingError, createAppointment, findOrCreateCustomer, loadBookingData, rescheduleAppointment, slotsFor } from "@/lib/booking/service";
+import { BookingError, MAX_SERVICES_PER_BOOKING, createAppointment, findOrCreateCustomer, loadBookingData, rescheduleAppointment, slotsFor } from "@/lib/booking/service";
 import { audit } from "@/lib/audit";
 import type { Appointment, AppointmentStatus } from "@/lib/types";
 import { fail, ok, type ActionResult } from "./result";
 
 const uuid = z.uuid();
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const serviceIdsSchema = z.array(uuid).min(1).max(MAX_SERVICES_PER_BOOKING);
 
 function revalidate() {
   for (const p of ["/dashboard", "/calendar", "/customers", "/waitlist"]) revalidatePath(p, "layout");
@@ -21,18 +22,18 @@ function bookingError(e: unknown) {
 }
 
 /** Available start times for the owner (no notice / advance limits). */
-export async function getOwnerSlots(input: { serviceId: string; staffId: string | null; date: string; ignoreAppointmentId?: string }): Promise<ActionResult<{ start: string; staffIds: string[] }[]>> {
-  if (!uuid.safeParse(input.serviceId).success || !date.safeParse(input.date).success) return fail("errors.invalid");
+export async function getOwnerSlots(input: { serviceIds: string[]; staffId: string | null; date: string; ignoreAppointmentId?: string }): Promise<ActionResult<{ start: string; staffIds: string[] }[]>> {
+  if (!serviceIdsSchema.safeParse(input.serviceIds).success || !date.safeParse(input.date).success) return fail("errors.invalid");
   const { business, supabase } = await requireBusiness();
   const data = await loadBookingData(supabase, business, input.date, input.date);
-  const slots = slotsFor(data, business, input.serviceId, input.staffId, input.date, { ownerMode: true, ignoreAppointmentId: input.ignoreAppointmentId });
+  const slots = slotsFor(data, business, input.serviceIds, input.staffId, input.date, { ownerMode: true, ignoreAppointmentId: input.ignoreAppointmentId });
   return ok(slots.map((s) => ({ start: s.start, staffIds: s.staffIds })));
 }
 
 const createSchema = z.object({
   customerId: uuid.optional().nullable(),
   newCustomer: z.object({ first_name: z.string().trim().min(1).max(100), last_name: z.string().trim().max(100).optional(), phone: z.string().max(40).optional(), email: z.string().max(200).optional() }).optional().nullable(),
-  serviceId: uuid,
+  serviceIds: serviceIdsSchema,
   staffId: uuid.nullable(),
   startAt: z.iso.datetime({ offset: true }),
   notes: z.string().max(2000).optional().nullable(),
@@ -53,7 +54,7 @@ export async function createOwnerAppointment(input: z.input<typeof createSchema>
     }
     // Owners can book outside regular hours; the database still prevents overlaps.
     const appt = await createAppointment(supabase, business, {
-      serviceId: v.serviceId,
+      serviceIds: v.serviceIds,
       staffId: v.staffId,
       startAt: v.startAt,
       customerId,

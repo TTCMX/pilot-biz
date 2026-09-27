@@ -308,6 +308,14 @@ export const es: Record<MessageKey, string> = {
 
   // public booking
   "booking.select_service": "¿Qué le gustaría hoy?",
+  "booking.no_staff_combo": "Nadie del equipo hace todos estos juntos. Elija otra combinación.",
+  "booking.max_services": "Hasta {count} servicios por cita.",
+  "booking.continue": "Continuar",
+  "booking.selected_count": "{count} elegidos",
+  "booking.select_services_hint": "Puede elegir más de uno; se hacen uno tras otro.",
+  "booking.total": "Total",
+  "booking.add_service": "Agregar otro servicio",
+  "appointment.services": "Servicios",
   "booking.select_staff": "¿Con quién le gustaría?",
   "booking.select_time": "Elija un horario",
   "booking.any_staff": "Quien esté disponible",

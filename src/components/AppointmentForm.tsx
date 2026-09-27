@@ -6,6 +6,9 @@ import { createOwnerAppointment, getOwnerSlots } from "@/app/actions/appointment
 import { searchCustomers } from "@/app/actions/customers";
 import { zonedToUtc, localTimeOf } from "@/lib/i18n/format";
 import type { MessageKey } from "@/lib/i18n";
+import { Icon } from "@/components/Icon";
+
+const MAX_SERVICES = 5;
 
 export type PickerCustomer = { id: string; first_name: string; last_name: string | null; phone: string | null; email?: string | null };
 export type FormService = { id: string; name: string; duration_minutes: number; price: number; currency: string };
@@ -31,10 +34,10 @@ export function AppointmentForm({
   defaultDate: string;
   onDone: () => void;
 }) {
-  const { t, money, timezone, time: fmtTime } = useI18n();
+  const { t, money, duration, timezone, time: fmtTime } = useI18n();
   const [customer, setCustomer] = useState<PickerCustomer | null>(prefill.customer ?? null);
   const [newCustomer, setNewCustomer] = useState<{ first_name: string; last_name: string; phone: string } | null>(null);
-  const [serviceId, setServiceId] = useState(prefill.serviceId ?? services[0]?.id ?? "");
+  const [serviceIds, setServiceIds] = useState<string[]>([prefill.serviceId ?? services[0]?.id ?? ""].filter(Boolean));
   const [staffId, setStaffId] = useState<string>(prefill.staffId ?? (staff.length === 1 ? staff[0].id : ""));
   const [date, setDate] = useState(prefill.date ?? defaultDate);
   const [time, setTime] = useState(prefill.time ?? "");
@@ -43,19 +46,27 @@ export function AppointmentForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const assigned = staffServices.filter((ss) => ss.service_id === serviceId).map((ss) => ss.staff_id);
-  const eligible = staff.filter((s) => !assigned.length || assigned.includes(s.id));
-  const service = services.find((s) => s.id === serviceId);
+  // Staff who can do every selected service (a service with no assignments can be done by anyone).
+  const eligible = staff.filter((s) =>
+    serviceIds.every((id) => {
+      const assigned = staffServices.filter((ss) => ss.service_id === id).map((ss) => ss.staff_id);
+      return !assigned.length || assigned.includes(s.id);
+    }),
+  );
+  const chosen = serviceIds.map((id) => services.find((s) => s.id === id)).filter((s): s is FormService => !!s);
+  const totalMinutes = chosen.reduce((sum, s) => sum + s.duration_minutes, 0);
+  const totalPrice = chosen.reduce((sum, s) => sum + Number(s.price), 0);
+  const servicesKey = serviceIds.join(",");
 
   useEffect(() => {
-    if (!serviceId || !date) return;
+    if (!servicesKey || !date) return;
     let cancelled = false;
     setSlots(null);
-    getOwnerSlots({ serviceId, staffId: staffId || null, date }).then((r) => !cancelled && setSlots(r.ok ? r.data : []));
+    getOwnerSlots({ serviceIds: servicesKey.split(","), staffId: staffId || null, date }).then((r) => !cancelled && setSlots(r.ok ? r.data : []));
     return () => {
       cancelled = true;
     };
-  }, [serviceId, staffId, date]);
+  }, [servicesKey, staffId, date]);
 
   function submit() {
     setError(null);
@@ -67,7 +78,7 @@ export function AppointmentForm({
       const res = await createOwnerAppointment({
         customerId: customer?.id ?? null,
         newCustomer: customer ? null : newCustomer,
-        serviceId,
+        serviceIds,
         staffId: staffId || slot?.staffIds[0] || eligible[0]?.id || null,
         startAt,
         notes,
@@ -84,12 +95,35 @@ export function AppointmentForm({
       <CustomerPicker value={customer} onChange={setCustomer} newCustomer={newCustomer} onNewCustomer={setNewCustomer} />
 
       <div>
-        <label className="label">{t("appointment.service")}</label>
-        <select className="input" value={serviceId} onChange={(e) => setServiceId(e.target.value)}>
-          {services.map((s) => (
-            <option key={s.id} value={s.id}>{s.name} · {s.duration_minutes} min · {money(s.price, s.currency)}</option>
+        <label className="label">{chosen.length > 1 ? t("appointment.services") : t("appointment.service")}</label>
+        <div className="space-y-2">
+          {serviceIds.map((id, i) => (
+            <div key={i} className="flex gap-2">
+              <select className="input" value={id} onChange={(e) => setServiceIds(serviceIds.map((x, j) => (j === i ? e.target.value : x)))}>
+                {services.map((s) => (
+                  <option key={s.id} value={s.id} disabled={s.id !== id && serviceIds.includes(s.id)}>{s.name} · {s.duration_minutes} min · {money(s.price, s.currency)}</option>
+                ))}
+              </select>
+              {serviceIds.length > 1 && (
+                <button type="button" className="icon-btn shrink-0" onClick={() => setServiceIds(serviceIds.filter((_, j) => j !== i))} aria-label={t("common.delete")}>
+                  <Icon name="close" size={18} />
+                </button>
+              )}
+            </div>
           ))}
-        </select>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          {serviceIds.length < Math.min(MAX_SERVICES, services.length) && (
+            <button
+              type="button"
+              className="btn-ghost btn-sm -ml-2"
+              onClick={() => { const next = services.find((s) => !serviceIds.includes(s.id)); if (next) setServiceIds([...serviceIds, next.id]); }}
+            >
+              <Icon name="add" size={16} />{t("booking.add_service")}
+            </button>
+          )}
+          {chosen.length > 1 && <span className="text-sm text-stone-500">{t("booking.total")}: {duration(totalMinutes)} · {money(totalPrice, chosen[0].currency)}</span>}
+        </div>
       </div>
 
       {staff.length > 1 && (
@@ -146,7 +180,7 @@ export function AppointmentForm({
       </div>
 
       {error && <p className="text-sm text-bad-700">{error}</p>}
-      <button className="btn-primary w-full" onClick={submit} disabled={pending || !service}>
+      <button className="btn-primary w-full" onClick={submit} disabled={pending || !chosen.length}>
         {pending ? t("common.saving") : t("appointment.create")}
       </button>
     </div>

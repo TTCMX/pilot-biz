@@ -86,6 +86,7 @@ export type Appointment = {
   customer_id: string;
   staff_id: string;
   service_id: string;
+  service_label?: string | null;
   start_at: string;
   end_at: string;
   status: AppointmentStatus;
@@ -122,4 +123,9 @@ export const OCCUPYING_STATUSES: AppointmentStatus[] = ["scheduled", "confirmed"
 export function customerName(c: Pick<Customer, "first_name" | "last_name"> | null | undefined): string {
   if (!c) return "";
   return [c.first_name, c.last_name].filter(Boolean).join(" ");
+}
+
+/** Display name of an appointment's service(s): "Manicure + Pedicure" for multi-service bookings. */
+export function serviceName(a: { service_label?: string | null; service?: { name: string } | null }): string {
+  return a.service_label || a.service?.name || "";
 }

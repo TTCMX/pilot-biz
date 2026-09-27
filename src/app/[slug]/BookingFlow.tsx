@@ -14,6 +14,7 @@ import { Icon } from "@/components/Icon";
 import { Avatar } from "@/components/Avatar";
 
 type Step = "service" | "staff" | "time" | "details";
+const MAX_SERVICES = 5;
 type DaySlots = { date: string; slots: { start: string; end: string }[] };
 
 export type PublicLook = { id: string; url: string; serviceId: string };
@@ -31,32 +32,51 @@ export function BookingFlow({ slug, catalog, looks, initialServiceId, initialSta
   const router = useRouter();
   const { services, staff, links } = catalog;
 
-  const eligibleFor = (serviceId: string) => {
-    const assigned = links.filter((l) => l.service_id === serviceId).map((l) => l.staff_id);
-    return staff.filter((s) => !assigned.length || assigned.includes(s.id));
-  };
+  // Staff who can do every selected service (a service with no assignments can be done by anyone).
+  const eligibleFor = (ids: string[]) =>
+    staff.filter((s) =>
+      ids.every((id) => {
+        const assigned = links.filter((l) => l.service_id === id).map((l) => l.staff_id);
+        return !assigned.length || assigned.includes(s.id);
+      }),
+    );
 
   const validService = services.find((s) => s.id === initialServiceId)?.id ?? null;
-  const [serviceId, setServiceId] = useState<string | null>(validService);
-  const [staffId, setStaffId] = useState<string | null>(validService && eligibleFor(validService).some((s) => s.id === initialStaffId) ? initialStaffId : null);
-  const [step, setStep] = useState<Step>(validService ? (eligibleFor(validService).length > 1 && !initialStaffId ? "staff" : "time") : "service");
+  const [selected, setSelected] = useState<string[]>(validService ? [validService] : []);
+  const [staffId, setStaffId] = useState<string | null>(validService && eligibleFor([validService]).some((s) => s.id === initialStaffId) ? initialStaffId : null);
+  const [step, setStep] = useState<Step>(validService ? (eligibleFor([validService]).length > 1 && !initialStaffId ? "staff" : "time") : "service");
   const [slot, setSlot] = useState<string | null>(null);
   const [look, setLook] = useState<PublicLook | null>(null);
   const [viewing, setViewing] = useState<PublicLook | null>(null);
 
-  const service = services.find((s) => s.id === serviceId);
-  const eligible = serviceId ? eligibleFor(serviceId) : [];
+  // Selected services are done back to back: durations and prices add up.
+  const chosen = selected.map((id) => services.find((s) => s.id === id)).filter((s): s is PublicCatalog["services"][number] => !!s);
+  const totalMinutes = chosen.reduce((sum, s) => sum + s.duration_minutes, 0);
+  const totalPrice = chosen.reduce((sum, s) => sum + s.price, 0);
+  const currency = chosen[0]?.currency ?? services[0]?.currency ?? "USD";
+  const eligible = selected.length ? eligibleFor(selected) : [];
 
-  function chooseService(id: string, chosenLook: PublicLook | null = null) {
-    setLook(chosenLook);
-    setServiceId(id);
+  function toggleService(id: string) {
+    const next = selected.includes(id) ? selected.filter((x) => x !== id) : selected.length < MAX_SERVICES ? [...selected, id] : selected;
+    setSelected(next);
+    if (look && !next.includes(look.serviceId)) setLook(null);
     setSlot(null);
-    const e = eligibleFor(id);
+  }
+
+  function proceed(ids: string[] = selected) {
+    setSlot(null);
+    const e = eligibleFor(ids);
     if (e.length > 1) setStep("staff");
     else {
       setStaffId(e[0]?.id ?? null);
       setStep("time");
     }
+  }
+
+  function chooseLook(l: PublicLook) {
+    setLook(l);
+    setSelected([l.serviceId]);
+    proceed([l.serviceId]);
   }
 
   const back = () => {
@@ -79,7 +99,7 @@ export function BookingFlow({ slug, catalog, looks, initialServiceId, initialSta
         <button className="btn-ghost -ml-3 mb-2" onClick={back}><Icon name="back" size={18} />{t("common.back")}</button>
       )}
 
-      {step !== "service" && service && (
+      {step !== "service" && chosen.length > 0 && (
         <div className="mb-6 flex gap-4 rounded-[20px] bg-surface p-5">
           {look && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -87,9 +107,9 @@ export function BookingFlow({ slug, catalog, looks, initialServiceId, initialSta
           )}
           <div className="min-w-0 flex-1">
           {look && <div className="mb-0.5 text-xs text-stone-500">{t("lookbook.your_look")}</div>}
-          <div className="text-[15px] font-semibold text-stone-900">{service.name}</div>
+          <div className="text-[15px] font-semibold text-stone-900">{chosen.map((s) => s.name).join(" + ")}</div>
           <div className="mt-0.5 text-sm text-stone-500">
-            {duration(service.duration_minutes)} · {money(service.price, service.currency)}
+            {duration(totalMinutes)} · {money(totalPrice, currency)}
             {step !== "staff" && eligible.length > 1 && ` · ${staff.find((s) => s.id === staffId)?.name ?? t("booking.any_staff")}`}
           </div>
           {slot && step === "details" && <SlotLabel iso={slot} />}
@@ -120,27 +140,49 @@ export function BookingFlow({ slug, catalog, looks, initialServiceId, initialSta
           look={viewing}
           service={services.find((s) => s.id === viewing.serviceId)!}
           onClose={() => setViewing(null)}
-          onChoose={() => { const l = viewing; setViewing(null); chooseService(l.serviceId, l); }}
+          onChoose={() => { const l = viewing; setViewing(null); chooseLook(l); }}
         />
       )}
 
       {step === "service" && (
         <section>
-          <h2 className="h2 mb-4 text-[24px]">{t("booking.select_service")}</h2>
+          <h2 className="h2 text-[24px]">{t("booking.select_service")}</h2>
+          <p className="mb-4 mt-1 text-sm text-stone-500">{t("booking.select_services_hint")}</p>
           <ul className="space-y-2">
-            {services.map((s) => (
-              <li key={s.id}>
-                <button onClick={() => chooseService(s.id)} className="flex w-full items-center gap-4 rounded-[20px] bg-surface p-5 text-left transition-colors hover:bg-brand-100">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[15px] font-semibold text-stone-900">{s.name}</div>
-                    {s.description && <div className="mt-0.5 line-clamp-2 text-sm text-stone-500">{s.description}</div>}
-                    <div className="mt-1 text-sm text-stone-500">{duration(s.duration_minutes)} · {money(s.price, s.currency)}</div>
-                  </div>
-                  <Icon name="chevronRight" size={20} className="text-stone-400" />
-                </button>
-              </li>
-            ))}
+            {services.map((s) => {
+              const on = selected.includes(s.id);
+              return (
+                <li key={s.id}>
+                  <button
+                    onClick={() => toggleService(s.id)}
+                    aria-pressed={on}
+                    className={`flex w-full items-center gap-4 rounded-[20px] border p-5 text-left transition-colors ${on ? "border-brand-600 bg-brand-100" : "border-transparent bg-surface hover:bg-brand-100"}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[15px] font-semibold text-stone-900">{s.name}</div>
+                      {s.description && <div className="mt-0.5 line-clamp-2 text-sm text-stone-500">{s.description}</div>}
+                      <div className="mt-1 text-sm text-stone-500">{duration(s.duration_minutes)} · {money(s.price, s.currency)}</div>
+                    </div>
+                    <span className={`flex size-7 shrink-0 items-center justify-center rounded-full border ${on ? "border-brand-600 bg-brand-600 text-white" : "border-brand-300"}`}>
+                      {on && <Icon name="check" size={16} />}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
+          {selected.length > 0 && eligible.length === 0 && <p className="mt-3 rounded-[20px] bg-warn-100 p-4 text-sm text-warn-700">{t("booking.no_staff_combo")}</p>}
+          {selected.length > 0 && (
+            <div className="sticky bottom-4 z-10 mt-4 flex items-center gap-3 rounded-full bg-forest p-2 pl-5 text-white shadow-float">
+              <div className="min-w-0 flex-1 text-sm">
+                <div className="truncate font-medium">{selected.length > 1 ? t("booking.selected_count", { count: selected.length }) : chosen[0]?.name}</div>
+                <div className="text-white/75">{duration(totalMinutes)} · {money(totalPrice, currency)}</div>
+              </div>
+              <button className="btn h-11 bg-white font-semibold text-brand-700 hover:bg-brand-50" disabled={eligible.length === 0} onClick={() => proceed()}>
+                {t("booking.continue")}
+              </button>
+            </div>
+          )}
         </section>
       )}
 
@@ -168,24 +210,24 @@ export function BookingFlow({ slug, catalog, looks, initialServiceId, initialSta
         </section>
       )}
 
-      {step === "time" && serviceId && (
+      {step === "time" && selected.length > 0 && (
         <section>
           <h2 className="h2 mb-4 text-[24px]">{t("booking.select_time")}</h2>
           <SlotPicker
             slug={slug}
-            serviceId={serviceId}
+            serviceIds={selected}
             staffId={staffId}
             value={slot}
             onChange={(s) => { setSlot(s); setStep("details"); }}
-            renderEmpty={(date) => <WaitlistForm slug={slug} serviceId={serviceId} staffId={staffId} date={date} />}
+            renderEmpty={(date) => <WaitlistForm slug={slug} serviceId={selected[0]} staffId={staffId} date={date} />}
           />
         </section>
       )}
 
-      {step === "details" && serviceId && slot && (
+      {step === "details" && selected.length > 0 && slot && (
         <DetailsForm
           onSubmit={async (contact, photos) => {
-            const r = await createPublicBooking({ ...contact, slug, serviceId, staffId, startAt: slot, rebookToken });
+            const r = await createPublicBooking({ ...contact, slug, serviceIds: selected, staffId, startAt: slot, rebookToken });
             if (!r.ok) {
               if (r.error === "errors.slot_taken") setStep("time");
               return t(r.error as MessageKey);
@@ -214,9 +256,9 @@ function SlotLabel({ iso }: { iso: string }) {
 }
 
 /** Date strip + time grid, backed by the public availability API. */
-export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, renderEmpty }: {
+export function SlotPicker({ slug, serviceIds, staffId, value, onChange, token, renderEmpty }: {
   slug: string;
-  serviceId: string;
+  serviceIds: string[];
   staffId: string | null;
   value: string | null;
   onChange: (iso: string) => void;
@@ -228,11 +270,12 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
   const [from, setFrom] = useState(today);
   const [days, setDays] = useState<DaySlots[] | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const servicesKey = serviceIds.join(",");
 
   useEffect(() => {
     let cancelled = false;
     setDays(null);
-    const qs = new URLSearchParams({ service: serviceId, from, days: "14", ...(staffId ? { staff: staffId } : {}), ...(token ? { token } : {}) });
+    const qs = new URLSearchParams({ services: servicesKey, from, days: "14", ...(staffId ? { staff: staffId } : {}), ...(token ? { token } : {}) });
     fetch(`/api/public/${slug}/availability?${qs}`)
       .then((r) => r.json())
       .then((d: { dates: DaySlots[] }) => {
@@ -244,7 +287,7 @@ export function SlotPicker({ slug, serviceId, staffId, value, onChange, token, r
     return () => {
       cancelled = true;
     };
-  }, [slug, serviceId, staffId, from, token]);
+  }, [slug, servicesKey, staffId, from, token]);
 
   const current = days?.find((d) => d.date === selectedDate);
   const periods = current
