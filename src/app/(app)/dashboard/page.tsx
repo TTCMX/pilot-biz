@@ -20,8 +20,7 @@ type Row = {
 };
 
 export default async function DashboardPage() {
-  const { business, supabase } = await requireBusiness();
-  const profile = await getProfile();
+  const [{ business, supabase }, profile] = await Promise.all([requireBusiness(), getProfile()]);
   const t = createT(business.language);
   const f = { locale: business.locale, timezone: business.timezone };
   const money = (n: number) => formatMoney(n, business.currency, business.locale);
