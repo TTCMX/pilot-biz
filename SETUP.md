@@ -8,8 +8,8 @@ Todo lo que tienes que hacer fuera del código está en esta página. Tiempo est
 
 1. Crea un proyecto en <https://supabase.com> (elige la región más cercana a tus clientes).
 2. Ve a **SQL Editor → New query**, pega **todo** el contenido de [`supabase/setup.sql`](supabase/setup.sql) y pulsa **Run**.
-   - Crea tablas, índices, Row Level Security, la vista de métricas de clientes, la función `create_business`, el bucket `logos` y sus políticas.
-   - Puedes volver a ejecutarlo sin problema (es idempotente) cuando haya actualizaciones.
+   - Crea tablas, índices, Row Level Security, la vista de métricas de clientes, la función `create_business`, el bucket público `logos` y el bucket privado `photos` (fotos de referencia y de trabajos, máx. 8 MB, solo JPG/PNG/WEBP).
+   - Puedes volver a ejecutarlo sin problema (es idempotente) cuando haya actualizaciones. Las actualizaciones también vienen sueltas en [`supabase/updates/`](supabase/updates/) por si prefieres correr solo lo nuevo.
 3. **Authentication → Sign In / Providers → Email**
    - Recomendado para el onboarding de <10 min: **desactiva "Confirm email"**. La dueña entra directo a crear su negocio.
    - Si lo dejas activo también funciona: recibe un correo y el enlace la regresa a `/auth/callback` → onboarding.
@@ -79,6 +79,16 @@ Sirve para 3 cosas: confirmación a la clienta (con su enlace para reagendar/can
 | Sender name | `Adina` |
 
 Si no configuras `RESEND_API_KEY`, la app funciona igual; simplemente no envía correos de reservas.
+
+### ¿No llegan los correos?
+
+En la app, **Ajustes → Correos de notificación → Enviarme un correo de prueba** envía un correo a tu cuenta y muestra exactamente qué respondió Resend y cómo arreglarlo. Las causas más comunes:
+
+- **Falta `EMAIL_FROM`** (o el dominio no está verificado): Resend usa su remitente de prueba `onboarding@resend.dev`, que **solo entrega a tu propio correo de Resend**. Las clientas nunca lo reciben.
+- **Cambiaste variables en Vercel pero no volviste a desplegar**: las variables solo aplican a despliegues nuevos (*Deployments → ⋯ → Redeploy*).
+- **La clienta no escribió su correo** al reservar (es opcional).
+- **Correos de confirmar cuenta o recuperar contraseña**: esos los envía Supabase, no la app; necesitan el SMTP del paso 5. Si no quieres que las dueñas confirmen su correo al registrarse, desactiva *Authentication → Sign In / Providers → Email → Confirm email*.
+
 
 ## 3. Probar el hito 1 (2 min)
 

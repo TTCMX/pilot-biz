@@ -115,3 +115,14 @@ export function ownerWaitlistEmail(d: { businessName: string; customerName: stri
     text: textVersion(heading, intro, rows, d.link, footer),
   };
 }
+
+export function testEmail(d: { businessName: string }, t: T): EmailContent {
+  const heading = t("email.test.heading");
+  const intro = t("email.test.intro", { business: d.businessName });
+  const footer = t("email.owner.footer");
+  return {
+    subject: t("email.test.subject", { business: d.businessName }),
+    html: layout({ heading, intro, rows: [], footer }),
+    text: textVersion(heading, intro, [], undefined, footer),
+  };
+}

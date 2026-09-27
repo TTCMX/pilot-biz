@@ -8,6 +8,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { Modal } from "@/components/Modal";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Icon } from "@/components/Icon";
+import { AppointmentPhotos } from "@/components/AppointmentPhotos";
 import { Avatar } from "@/components/Avatar";
 import { AppointmentForm, type AppointmentPrefill, type FormService, type FormStaff, type PickerCustomer } from "@/components/AppointmentForm";
 import { moveAppointment, setAppointmentStatus, updateAppointmentDetails } from "@/app/actions/appointments";
@@ -455,6 +456,8 @@ function AppointmentDetails({ appt, staff, pending, error, onStatus, onMove, onN
           <button className="btn-primary btn-sm w-full" disabled={pending} onClick={() => onMove(zonedToUtc(date, hhmm, timezone), staffId)}>{t("common.save")}</button>
         </div>
       )}
+
+      <AppointmentPhotos key={appt.id} appointmentId={appt.id} />
 
       <div>
         <label className="label">{t("appointment.notes")}</label>

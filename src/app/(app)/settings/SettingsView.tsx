@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/components/I18nProvider";
-import { updateBusiness, uploadLogo } from "@/app/actions/settings";
+import { sendTestEmail, updateBusiness, uploadLogo } from "@/app/actions/settings";
 import { COUNTRIES, SUPPORTED_LANGUAGES, getCountry } from "@/lib/i18n/countries";
 import { BUSINESS_TYPES } from "@/lib/templates";
 import { weekdayName } from "@/lib/i18n/format";
@@ -12,7 +12,9 @@ import type { MessageKey } from "@/lib/i18n";
 import type { Business } from "@/lib/types";
 import { Icon } from "@/components/Icon";
 
-export function SettingsView({ business, bookingUrl, appUrl }: { business: Business; bookingUrl: string; appUrl: string }) {
+type EmailStatus = { enabled: boolean; address: string; isTestSender: boolean };
+
+export function SettingsView({ business, bookingUrl, appUrl, email }: { business: Business; bookingUrl: string; appUrl: string; email: EmailStatus }) {
   const { t, locale } = useI18n();
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -51,6 +53,8 @@ export function SettingsView({ business, bookingUrl, appUrl }: { business: Busin
           <a className="btn-secondary btn-sm" href={bookingUrl} target="_blank" rel="noreferrer" aria-label="open"><Icon name="openInNew" size={16} /></a>
         </div>
       </section>
+
+      <EmailSection status={email} />
 
       <section className="card space-y-3">
         <h2 className="h2">{t("settings.logo")}</h2>
@@ -173,5 +177,41 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {children}
       {hint && <p className="mt-1 truncate text-xs text-stone-400">{hint}</p>}
     </div>
+  );
+}
+
+/** Email status plus a one-click test that shows exactly what Resend answered and how to fix it. */
+function EmailSection({ status }: { status: EmailStatus }) {
+  const { t } = useI18n();
+  const [pending, start] = useTransition();
+  const [result, setResult] = useState<{ to: string; problem: string | null; error: string | null } | null>(null);
+  const warn = !status.enabled || status.isTestSender;
+  return (
+    <section className="card space-y-3">
+      <h2 className="h2">{t("settings.email_title")}</h2>
+      <p className="flex items-center gap-2 text-sm text-stone-700">
+        <span className={`size-2 shrink-0 rounded-full ${warn ? "bg-bad-700" : "bg-brand-600"}`} />
+        {status.enabled ? t("settings.email_on", { from: status.address }) : t("settings.email_off")}
+      </p>
+      {status.enabled && status.isTestSender && <p className="rounded-2xl bg-warn-100 p-4 text-sm text-warn-700">{t("settings.email_fix.test_sender")}</p>}
+      <p className="muted">{t("settings.email_note")}</p>
+      <button
+        className="btn-secondary"
+        disabled={pending}
+        onClick={() => start(async () => { const r = await sendTestEmail(); setResult(r.ok ? r.data : { to: "", problem: "other", error: r.error }); })}
+      >
+        <Icon name="mail" size={18} />
+        {pending ? t("common.loading") : t("settings.email_test")}
+      </button>
+      {result && !result.problem && (
+        <p className="flex items-center gap-2 rounded-2xl bg-ok-100 p-4 text-sm text-ok-700"><Icon name="check" size={18} />{t("settings.email_test_sent", { email: result.to })}</p>
+      )}
+      {result?.problem && (
+        <div className="space-y-1 rounded-2xl bg-bad-100 p-4 text-sm text-bad-700">
+          <p>{t(`settings.email_fix.${result.problem}` as MessageKey)}</p>
+          {result.error && <p className="break-words text-xs opacity-80">{t("settings.email_raw", { error: result.error })}</p>}
+        </div>
+      )}
+    </section>
   );
 }

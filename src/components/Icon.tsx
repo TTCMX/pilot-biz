@@ -1,6 +1,6 @@
 import {
   AlarmClock, ArrowLeft, Banknote, CalendarCheck2, CalendarDays, CalendarX2, Check, ChevronLeft, ChevronRight, Clock, Copy,
-  ExternalLink, FlaskConical, Hourglass, House, Info, Link2, LogOut, Mail, MapPin, MessageCircle, Pencil, Phone, Plus,
+  ExternalLink, FlaskConical, Hourglass, House, ImagePlus, Images, Info, Link2, LogOut, Mail, MapPin, MessageCircle, Pencil, Phone, Plus,
   RotateCcw, Scissors, Search, Settings, Sparkles, Star, Trash2, TrendingUp, Upload, User, UserPlus, Users, UsersRound, X,
   type LucideIcon,
 } from "lucide-react";
@@ -47,6 +47,8 @@ const ICONS = {
   science: FlaskConical,
   alarm: AlarmClock,
   info: Info,
+  camera: ImagePlus,
+  gallery: Images,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

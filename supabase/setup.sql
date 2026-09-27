@@ -256,6 +256,24 @@ create table if not exists public.waitlist_entries (
 create index if not exists waitlist_business_idx on public.waitlist_entries(business_id, status);
 
 -- ---------------------------------------------------------------------
+-- Photos: reference pictures from the customer ("reference") and pictures
+-- of the finished work ("result"). Files live in the private "photos" bucket
+-- under "<business_id>/<appointment_id>/..." and are served via signed URLs.
+-- ---------------------------------------------------------------------
+create table if not exists public.appointment_photos (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  customer_id uuid not null references public.customers(id) on delete cascade,
+  appointment_id uuid references public.appointments(id) on delete set null,
+  kind text not null check (kind in ('reference', 'result')),
+  storage_path text not null unique,
+  uploaded_by uuid references auth.users(id) on delete set null, -- null = the customer
+  created_at timestamptz not null default now()
+);
+create index if not exists appointment_photos_customer_idx on public.appointment_photos(customer_id, created_at desc);
+create index if not exists appointment_photos_appointment_idx on public.appointment_photos(appointment_id);
+
+-- ---------------------------------------------------------------------
 -- Audit log
 -- ---------------------------------------------------------------------
 create table if not exists public.audit_log (
@@ -318,6 +336,7 @@ alter table public.availability_exceptions enable row level security;
 alter table public.customers enable row level security;
 alter table public.appointments enable row level security;
 alter table public.waitlist_entries enable row level security;
+alter table public.appointment_photos enable row level security;
 alter table public.audit_log enable row level security;
 
 drop policy if exists "profiles self read" on public.profiles;
@@ -338,7 +357,7 @@ create policy "membership self read" on public.business_members for select
 do $$
 declare t text;
 begin
-  foreach t in array array['staff','services','staff_services','availability_rules','availability_exceptions','customers','appointments','waitlist_entries']
+  foreach t in array array['staff','services','staff_services','availability_rules','availability_exceptions','customers','appointments','waitlist_entries','appointment_photos']
   loop
     execute format('drop policy if exists "tenant access" on public.%I', t);
     execute format(
@@ -413,6 +432,12 @@ create policy "logos member update" on storage.objects for update to authenticat
 drop policy if exists "logos member delete" on storage.objects;
 create policy "logos member delete" on storage.objects for delete to authenticated
   using (bucket_id = 'logos' and public.is_business_member(((storage.foldername(name))[1])::uuid));
+
+-- Storage: private bucket for appointment photos. The server validates every
+-- upload and hands out short-lived signed URLs; there is no direct client access.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('photos', 'photos', false, 8388608, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
 
 -- Make the new tables/functions visible to the API immediately.
 notify pgrst, 'reload schema';
