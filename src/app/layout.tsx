@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Google_Sans } from "next/font/google";
+import { DM_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import { APP_NAME } from "@/lib/brand";
 
-const googleSans = Google_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-google-sans", display: "swap" });
+const dmSans = DM_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-dm-sans", display: "swap" });
+const fraunces = Fraunces({ subsets: ["latin", "latin-ext"], style: ["normal", "italic"], variable: "--font-fraunces", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
@@ -12,11 +13,11 @@ export const metadata: Metadata = {
   description: "Appointments, booking and customers for service businesses.",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#f8fafd" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#eceee4" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={googleSans.variable} suppressHydrationWarning>
+    <html lang="en" className={`${dmSans.variable} ${fraunces.variable}`} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

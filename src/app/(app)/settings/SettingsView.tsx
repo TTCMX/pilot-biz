@@ -46,7 +46,7 @@ export function SettingsView({ business, bookingUrl, appUrl }: { business: Busin
         <h2 className="h2">{t("settings.booking_page")}</h2>
         <div className="flex items-center gap-2 rounded-2xl bg-stone-100 py-2 pl-4 pr-2">
           <Icon name="link" size={20} className="text-stone-500" />
-          <span className="flex-1 truncate font-mono text-sm">{bookingUrl}</span>
+          <span className="flex-1 truncate text-sm">{bookingUrl}</span>
           <button className="btn-secondary btn-sm" onClick={() => { navigator.clipboard?.writeText(bookingUrl); setCopied(true); }}><Icon name="copy" size={16} />{copied ? t("common.copied") : t("booking_page.copy_link")}</button>
           <a className="btn-secondary btn-sm" href={bookingUrl} target="_blank" rel="noreferrer" aria-label="open"><Icon name="openInNew" size={16} /></a>
         </div>

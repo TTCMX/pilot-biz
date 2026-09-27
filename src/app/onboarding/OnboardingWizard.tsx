@@ -139,7 +139,8 @@ function BusinessStep({ pending, language, onSubmit }: { pending: boolean; langu
               type="button"
               key={bt}
               onClick={() => setType(bt)}
-              className={`flex h-10 items-center justify-center gap-1.5 rounded-lg border px-2 text-sm font-medium transition-colors ${type === bt ? "border-transparent bg-nav text-nav-on" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"}`}
+              aria-pressed={type === bt}
+              className="choice gap-1.5 px-2"
             >
               {type === bt && <Icon name="check" size={16} />}
               {t(`business_type.${bt}` as MessageKey)}
@@ -303,7 +304,7 @@ function ReadyStep({ url, pending, onFinish }: { url: string; pending: boolean; 
         <StepHeader title={t("onboarding.ready_title")} subtitle={t("onboarding.ready_subtitle")} />
         <div className="flex items-center gap-2 rounded-2xl bg-stone-100 py-2 pl-4 pr-2">
           <Icon name="link" size={20} className="text-stone-500" />
-          <span className="flex-1 truncate font-mono text-sm">{url}</span>
+          <span className="flex-1 truncate text-sm">{url}</span>
           <button
             className="btn-secondary btn-sm"
             onClick={() => {
@@ -320,7 +321,7 @@ function ReadyStep({ url, pending, onFinish }: { url: string; pending: boolean; 
         </div>
         <p className="mt-3 text-xs text-stone-500">{t("onboarding.test_hint")}</p>
       </div>
-      <div className="overflow-hidden rounded-3xl bg-white shadow-card">
+      <div className="overflow-hidden rounded-[20px] bg-surface">
         <div className="border-b border-stone-100 px-5 py-3 text-xs font-medium text-stone-500">{t("booking_page.preview")}</div>
         <iframe src={url} className="h-[520px] w-full" title="preview" />
       </div>
@@ -333,9 +334,9 @@ function ChoiceCard({ active, icon, label, onClick }: { active: boolean; icon: I
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${active ? "border-transparent bg-nav text-nav-on" : "border-stone-300 bg-white hover:bg-stone-50"}`}
+      className={`flex flex-col items-start gap-3 rounded-2xl border p-4 text-left transition-colors ${active ? "border-brand-600 bg-brand-100 text-stone-900" : "border-brand-200 bg-surface hover:bg-brand-100"}`}
     >
-      <span className={`flex size-10 items-center justify-center rounded-full ${active ? "bg-white/70" : "bg-stone-100 text-stone-600"}`}>
+      <span className={`flex size-10 items-center justify-center rounded-full ${active ? "bg-surface/70" : "bg-stone-100 text-stone-600"}`}>
         <Icon name={icon} size={22} />
       </span>
       <span className="font-medium">{label}</span>
@@ -346,7 +347,7 @@ function ChoiceCard({ active, icon, label, onClick }: { active: boolean; icon: I
 function ChoiceRow({ icon, label, onClick }: { icon: IconName; label: string; onClick: () => void }) {
   return (
     <button onClick={onClick} className="flex w-full items-center gap-4 rounded-2xl bg-stone-100 p-4 text-left font-medium text-stone-800 transition-colors hover:bg-stone-200">
-      <span className="flex size-10 items-center justify-center rounded-full bg-white text-brand-600"><Icon name={icon} size={22} /></span>
+      <span className="flex size-10 items-center justify-center rounded-full bg-surface text-brand-600"><Icon name={icon} size={22} /></span>
       <span className="flex-1">{label}</span>
       <Icon name="chevronRight" size={22} className="text-stone-400" />
     </button>

@@ -21,7 +21,7 @@ export default async function ManagePage({ params, searchParams }: { params: Pro
   if (!appt) notFound();
 
   return (
-    <div className="min-h-dvh bg-white sm:min-h-0 sm:overflow-hidden sm:rounded-[28px] sm:shadow-card">
+    <div className="min-h-dvh sm:min-h-0">
       <BusinessHeader business={business} />
       <ManageBooking
         slug={slug}

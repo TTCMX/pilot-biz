@@ -40,7 +40,7 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
       </div>
 
       <form onSubmit={(e) => { e.preventDefault(); go({}); }}>
-        <label className="flex h-12 items-center gap-3 rounded-full bg-stone-100 px-5 transition-colors focus-within:bg-white focus-within:shadow-card">
+        <label className="flex h-12 items-center gap-3 rounded-full border border-brand-200 bg-surface px-5 transition-colors focus-within:border-brand-600">
           <Icon name="search" size={22} className="text-stone-500" />
           <input className="h-full flex-1 bg-transparent text-base outline-none placeholder:text-stone-500 sm:text-sm" placeholder={t("customer.search")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </label>
@@ -51,10 +51,11 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
           <button
             key={s}
             onClick={() => go({ segment: s })}
-            className={`flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors ${segment === s ? "border-transparent bg-nav text-nav-on" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-100"}`}
+            aria-pressed={segment === s}
+            className="choice shrink-0 gap-1.5"
           >
             {segment === s && <Icon name="check" size={16} />}
-            {t(`segment.${s}`)} <span className={segment === s ? "text-nav-on/70" : "text-stone-400"}>{counts[s]}</span>
+            {t(`segment.${s}`)} <span className={segment === s ? "text-white/75" : "text-stone-500"}>{counts[s]}</span>
           </button>
         ))}
       </div>
@@ -69,7 +70,7 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
           <ul className="space-y-2 md:hidden">
             {customers.map((c) => (
               <li key={c.id}>
-                <Link href={`/customers/${c.id}`} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-card">
+                <Link href={`/customers/${c.id}`} className="flex items-center gap-3 rounded-[20px] bg-surface p-4">
                   <Avatar name={`${c.first_name} ${c.last_name ?? ""}`} size={40} />
                   <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">

@@ -23,26 +23,27 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
+// Botanical palette: Niebla background, Lino card, Salvia action, Bosque ink. Flat, no gradients.
 function layout(opts: { heading: string; intro: string; rows: [string, string][]; cta?: { label: string; href: string }; footer: string }): string {
   const rows = opts.rows
     .filter(([, v]) => v)
     .map(
       ([k, v]) =>
-        `<tr><td style="padding:6px 0;color:#78716c;font-size:14px;width:120px;vertical-align:top">${escapeHtml(k)}</td><td style="padding:6px 0;color:#1c1917;font-size:14px;font-weight:600">${escapeHtml(v)}</td></tr>`,
+        `<tr><td style="padding:8px 0"><div style="color:#55605a;font-size:13px">${escapeHtml(k)}</div><div style="color:#1f2a22;font-size:15px;font-weight:600;margin-top:2px">${escapeHtml(v)}</div></td></tr>`,
     )
     .join("");
   const cta = opts.cta
-    ? `<p style="margin:24px 0 8px"><a href="${escapeHtml(opts.cta.href)}" style="display:inline-block;background:#0b57d0;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 20px;border-radius:999px">${escapeHtml(opts.cta.label)}</a></p>`
+    ? `<p style="margin:24px 0 8px"><a href="${escapeHtml(opts.cta.href)}" style="display:inline-block;background:#55694f;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 24px;border-radius:999px">${escapeHtml(opts.cta.label)}</a></p>`
     : "";
-  return `<!doctype html><html><body style="margin:0;background:#fafaf9;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf9;padding:24px 12px"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #e7e5e4;border-radius:16px;padding:24px">
+  return `<!doctype html><html><body style="margin:0;background:#eceee4;font-family:'DM Sans',-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eceee4;padding:32px 16px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#f6f7f1;border-radius:26px;padding:28px">
 <tr><td>
-<h1 style="margin:0 0 8px;font-size:20px;color:#1c1917">${escapeHtml(opts.heading)}</h1>
-<p style="margin:0 0 16px;font-size:15px;color:#44403c;line-height:1.5">${escapeHtml(opts.intro)}</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #f5f5f4;padding-top:8px">${rows}</table>
+<h1 style="margin:0 0 10px;font-family:Fraunces,Georgia,'Times New Roman',serif;font-weight:300;font-size:26px;line-height:1.15;color:#1f2a22">${escapeHtml(opts.heading)}</h1>
+<p style="margin:0 0 16px;font-size:15px;color:#37413a;line-height:1.5">${escapeHtml(opts.intro)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #d9b27c;padding-top:8px">${rows}</table>
 ${cta}
-<p style="margin:16px 0 0;font-size:12px;color:#8e918f;line-height:1.5">${escapeHtml(opts.footer)}</p>
+<p style="margin:20px 0 0;font-size:12px;color:#55605a;line-height:1.5">${escapeHtml(opts.footer)}</p>
 </td></tr></table></td></tr></table></body></html>`;
 }
 

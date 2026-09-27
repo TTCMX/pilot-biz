@@ -70,9 +70,9 @@ export function CustomerProfile({ customer, stats, history, intervalDays, daysSi
       </div>
 
       {overdue && (
-        <div className="rounded-3xl bg-warn-100 p-5">
+        <div className="rounded-[20px] bg-warn-100 p-5">
           <p className="flex items-center gap-2 font-medium text-warn-700"><Icon name="alarm" size={20} />{t("customer.overdue", { days: daysSinceLast!, interval: intervalDays! })}</p>
-          <p className="mt-3 rounded-2xl bg-white p-4 text-sm text-stone-700">{message}</p>
+          <p className="mt-3 rounded-2xl bg-surface p-4 text-sm text-stone-700">{message}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button className="btn-secondary btn-sm" onClick={() => { navigator.clipboard?.writeText(message); setCopied(true); }}><Icon name="copy" size={16} />{copied ? t("common.copied") : t("message.copy")}</button>
             {wa && <a className="btn-secondary btn-sm" href={wa} target="_blank" rel="noreferrer"><Icon name="chat" size={16} />{t("message.open_whatsapp")}</a>}
@@ -158,7 +158,7 @@ function Stat({ icon, tone, label, value }: { icon: IconName; tone: string; labe
   return (
     <div className="card">
       <span className={`flex size-9 items-center justify-center rounded-full ${tone}`}><Icon name={icon} size={20} /></span>
-      <div className="mt-3 text-[22px] font-normal tabular-nums text-stone-900">{value}</div>
+      <div className="mt-2 font-display text-[24px] font-light tabular-nums text-stone-900">{value}</div>
       <div className="text-sm text-stone-500">{label}</div>
     </div>
   );

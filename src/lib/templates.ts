@@ -78,4 +78,5 @@ export function serviceTemplates(type: string, currency: string) {
   return list.map((t) => ({ nameKey: t.key, duration_minutes: t.duration, price: roundNice(t.usd * factor) }));
 }
 
-export const STAFF_COLORS = ["#1a73e8", "#d93025", "#188038", "#f9ab00", "#9334e6", "#e8710a", "#12b5cb", "#e52592"];
+// Muted, earthy staff colors that sit well on Lino; all keep 4.5:1 with white text.
+export const STAFF_COLORS = ["#55694f", "#4f6b6a", "#9a5f45", "#7a6a35", "#6e5a78", "#4d6275", "#6b7337", "#8e5a64"];
