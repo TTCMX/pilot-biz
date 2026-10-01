@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireBusiness } from "@/lib/context";
 import { averageIntervalDays, suggestedNextVisit } from "@/lib/metrics/customers";
 import { localDateOf, localTimeOf } from "@/lib/i18n/format";
-import type { Customer, CustomerStats } from "@/lib/types";
+import { serviceIdsOf, type Customer, type CustomerStats } from "@/lib/types";
 import { CustomerProfile, type HistoryRow } from "./CustomerProfile";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PHOTO_COLUMNS, withSignedUrls } from "@/lib/photos";
@@ -15,7 +15,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
     supabase.from("customer_stats").select("*").eq("customer_id", id).maybeSingle(),
     supabase
       .from("appointments")
-      .select("id, start_at, end_at, status, price, currency, service_id, staff_id, source, service_label, service:services(name), staff:staff(name)")
+      .select("id, start_at, end_at, status, price, currency, service_id, staff_id, source, service_label, service:services(name), items:appointment_services(service_id, position), staff:staff(name)")
       .eq("customer_id", id)
       .eq("business_id", business.id)
       .order("start_at", { ascending: false })
@@ -34,7 +34,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   const photos = await withSignedUrls(createAdminClient(), photoRows.data ?? []);
 
   const rebookHref = last
-    ? `/calendar?new=1&customer=${id}&service=${last.service_id}&staff=${last.staff_id}&rebook=${last.id}&time=${localTimeOf(last.start_at, business.timezone)}&date=${localDateOf(
+    ? `/calendar?new=1&customer=${id}&service=${serviceIdsOf(last).join(",")}&staff=${last.staff_id}&rebook=${last.id}&time=${localTimeOf(last.start_at, business.timezone)}&date=${localDateOf(
         new Date(Math.max(suggested!.getTime(), Date.now())).toISOString(),
         business.timezone,
       )}`

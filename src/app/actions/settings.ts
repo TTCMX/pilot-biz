@@ -11,7 +11,7 @@ import { audit } from "@/lib/audit";
 import { createT } from "@/lib/i18n";
 import { classifyEmailError, isEmailEnabled, sendEmail, type EmailProblem } from "@/lib/email/send";
 import { testEmail } from "@/lib/email/templates";
-import { fail, ok, type ActionResult } from "./result";
+import { dbFail, fail, ok, type ActionResult } from "./result";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -49,7 +49,7 @@ export async function updateBusiness(input: z.input<typeof schema>): Promise<Act
       locale: `${v.language}-${v.country.toUpperCase()}`,
     })
     .eq("id", business.id);
-  if (error) return fail(error.code === "23505" ? "errors.slug_taken" : error.message);
+  if (error) return error.code === "23505" ? fail("errors.slug_taken") : dbFail(error);
 
   if (v.currency !== business.currency) {
     // Keep service prices in the business currency (amounts are not converted).
@@ -63,12 +63,13 @@ export async function updateBusiness(input: z.input<typeof schema>): Promise<Act
 export async function uploadLogo(form: FormData): Promise<ActionResult> {
   const file = form.get("logo");
   if (!(file instanceof File) || !file.size) return fail("errors.invalid");
-  if (file.size > 2 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) return fail("errors.invalid_image");
+  // No SVG: it can carry scripts and the logo bucket is public.
+  if (file.size > 2 * 1024 * 1024 || !["image/png", "image/jpeg", "image/webp"].includes(file.type)) return fail("errors.invalid_image");
   const { business, supabase } = await requireBusiness();
-  const ext = file.type.split("/")[1].replace("svg+xml", "svg").replace("jpeg", "jpg");
+  const ext = file.type.split("/")[1].replace("jpeg", "jpg");
   const path = `${business.id}/logo-${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("logos").upload(path, file, { contentType: file.type, upsert: true });
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   const { data } = supabase.storage.from("logos").getPublicUrl(path);
   await supabase.from("businesses").update({ logo_url: data.publicUrl }).eq("id", business.id);
   revalidatePath("/", "layout");

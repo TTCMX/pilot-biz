@@ -91,17 +91,45 @@ export async function registerPhotos(db: SupabaseClient, scope: Scope, kind: Pho
 
 type PhotoRow = { id: string; kind: PhotoKind; storage_path: string; appointment_id: string | null; service_id?: string | null; created_at: string; published?: boolean };
 
+// Signed URLs are reused while they have plenty of life left, so the browser can
+// cache the image (a new token = a new URL = a new download) and Storage isn't
+// asked to sign the same file on every page view. The cache only ever answers
+// for rows the caller already loaded with its own permissions.
+const signedCache = new Map<string, { url: string; expiresAt: number }>();
+const REUSE_MARGIN_MS = 15 * 60 * 1000;
+const CACHE_LIMIT = 5000;
+
 /** Attach short-lived signed URLs to photo rows (rows whose file is missing are dropped). */
 export async function withSignedUrls(db: SupabaseClient, rows: PhotoRow[]): Promise<Photo[]> {
   if (!rows.length) return [];
-  const { data } = await db.storage.from(PHOTOS_BUCKET).createSignedUrls(rows.map((r) => r.storage_path), SIGNED_URL_SECONDS);
-  const urls = new Map((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  const now = Date.now();
+  const urls = new Map<string, string>();
+  const missing: string[] = [];
+  for (const r of rows) {
+    const hit = signedCache.get(r.storage_path);
+    if (hit && hit.expiresAt - now > REUSE_MARGIN_MS) urls.set(r.storage_path, hit.url);
+    else missing.push(r.storage_path);
+  }
+  if (missing.length) {
+    const { data } = await db.storage.from(PHOTOS_BUCKET).createSignedUrls(missing, SIGNED_URL_SECONDS);
+    if (signedCache.size > CACHE_LIMIT) signedCache.clear();
+    for (const d of data ?? []) {
+      if (!d.signedUrl || !d.path) continue;
+      urls.set(d.path, d.signedUrl);
+      signedCache.set(d.path, { url: d.signedUrl, expiresAt: now + SIGNED_URL_SECONDS * 1000 });
+    }
+  }
   return rows.flatMap((r) => {
     const url = urls.get(r.storage_path);
     return url
       ? [{ id: r.id, kind: r.kind, url, appointment_id: r.appointment_id, service_id: r.service_id ?? null, created_at: r.created_at, published: !!r.published }]
       : [];
   });
+}
+
+/** Forget cached URLs of deleted files. */
+export function forgetSignedUrls(paths: string[]) {
+  for (const p of paths) signedCache.delete(p);
 }
 
 export const PHOTO_COLUMNS = "id, kind, storage_path, appointment_id, service_id, created_at, published";
@@ -114,15 +142,14 @@ export type Look = { id: string; url: string; serviceId: string };
 const LOOKBOOK_SIZE = 30;
 
 /** Published looks whose service can still be booked online, newest first. */
-export async function publishedLooks(db: SupabaseClient, businessId: string, bookableServiceIds: string[]): Promise<Look[]> {
-  if (!bookableServiceIds.length) return [];
+export async function publishedLooks(db: SupabaseClient, businessId: string): Promise<Look[]> {
   const { data } = await db
     .from("appointment_photos")
-    .select(PHOTO_COLUMNS)
+    .select(`${PHOTO_COLUMNS}, service:services!inner(active)`)
     .eq("business_id", businessId)
     .eq("published", true)
     .in("kind", ["result", "portfolio"])
-    .in("service_id", bookableServiceIds)
+    .eq("service.active", true)
     .order("created_at", { ascending: false })
     .limit(LOOKBOOK_SIZE);
   const signed = await withSignedUrls(db, (data ?? []) as PhotoRow[]);

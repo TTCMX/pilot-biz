@@ -54,7 +54,6 @@ export type Service = {
   sort_order: number;
 };
 
-export type StaffService = { business_id: string; staff_id: string; service_id: string };
 
 export type Customer = {
   id: string;
@@ -116,10 +115,6 @@ export type WaitlistEntry = {
   created_at: string;
 };
 
-export const ACTIVE_STATUSES: AppointmentStatus[] = ["scheduled", "confirmed"];
-/** Statuses that occupy the calendar (everything except cancelled). */
-export const OCCUPYING_STATUSES: AppointmentStatus[] = ["scheduled", "confirmed", "completed", "no_show"];
-
 export function customerName(c: Pick<Customer, "first_name" | "last_name"> | null | undefined): string {
   if (!c) return "";
   return [c.first_name, c.last_name].filter(Boolean).join(" ");
@@ -128,4 +123,10 @@ export function customerName(c: Pick<Customer, "first_name" | "last_name"> | nul
 /** Display name of an appointment's service(s): "Manicure + Pedicure" for multi-service bookings. */
 export function serviceName(a: { service_label?: string | null; service?: { name: string } | null }): string {
   return a.service_label || a.service?.name || "";
+}
+
+/** Services of an appointment in booking order (multi-service bookings keep a breakdown). */
+export function serviceIdsOf(a: { service_id: string; items?: { service_id: string | null; position: number }[] | null }): string[] {
+  const ids = [...(a.items ?? [])].sort((x, y) => x.position - y.position).map((i) => i.service_id).filter((id): id is string => !!id);
+  return ids.length ? ids : [a.service_id];
 }

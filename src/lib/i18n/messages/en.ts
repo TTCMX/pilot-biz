@@ -2,6 +2,10 @@
 export const en = {
   // common
   "common.back": "Back",
+  "common.open": "Open",
+  "common.next": "Next",
+  "common.previous": "Previous",
+  "common.close": "Close",
   "common.cancel": "Cancel",
   "common.change": "Change",
   "common.continue": "Continue",
@@ -192,6 +196,8 @@ export const en = {
   // customers
   "customers.import": "Import CSV",
   "customers.empty": "No customers here yet.",
+  "customers.showing": "Showing {shown} of {total}",
+  "customers.show_more": "Show more",
   "customer.new": "New customer",
   "customer.search": "Search by name, phone or email",
   "customer.name": "Name",
@@ -307,6 +313,7 @@ export const en = {
 
   // public booking
   "booking.select_service": "Choose a service",
+  "booking.meta_description": "Book your appointment at {name}{city} online, in under a minute.",
   "booking.no_staff_combo": "No one on the team does all of these together. Choose another combination.",
   "booking.max_services": "Up to {count} services per booking.",
   "booking.continue": "Continue",
@@ -388,7 +395,7 @@ export const en = {
   "errors.time_required": "Choose a time.",
   "errors.invalid_hours": "Closing time must be after opening time.",
   "errors.invalid_phone": "Please enter a valid phone number.",
-  "errors.invalid_image": "Use a PNG, JPG, WEBP or SVG image under 2 MB.",
+  "errors.invalid_image": "Use a PNG, JPG or WEBP image under 2 MB.",
   "errors.invalid_slug": "Use 3–60 lowercase letters, numbers or dashes.",
   "errors.slug_taken": "That link is already taken.",
   // password reset & email

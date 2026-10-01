@@ -19,11 +19,11 @@ type DaySlots = { date: string; slots: { start: string; end: string }[] };
 
 export type PublicLook = { id: string; url: string; serviceId: string };
 
-export function BookingFlow({ slug, catalog, looks, initialServiceId, initialStaffId, rebookToken, isTest }: {
+export function BookingFlow({ slug, catalog, looks, initialServiceIds, initialStaffId, rebookToken, isTest }: {
   slug: string;
   catalog: PublicCatalog;
   looks: PublicLook[];
-  initialServiceId: string | null;
+  initialServiceIds: string[];
   initialStaffId: string | null;
   rebookToken: string | null;
   isTest: boolean;
@@ -41,10 +41,12 @@ export function BookingFlow({ slug, catalog, looks, initialServiceId, initialSta
       }),
     );
 
-  const validService = services.find((s) => s.id === initialServiceId)?.id ?? null;
-  const [selected, setSelected] = useState<string[]>(validService ? [validService] : []);
-  const [staffId, setStaffId] = useState<string | null>(validService && eligibleFor([validService]).some((s) => s.id === initialStaffId) ? initialStaffId : null);
-  const [step, setStep] = useState<Step>(validService ? (eligibleFor([validService]).length > 1 && !initialStaffId ? "staff" : "time") : "service");
+  // "Book again" links preselect the previous visit's services (and staff, if still possible).
+  const initial = initialServiceIds.filter((id) => services.some((s) => s.id === id));
+  const initialEligible = initial.length ? eligibleFor(initial) : [];
+  const [selected, setSelected] = useState<string[]>(initialEligible.length ? initial : []);
+  const [staffId, setStaffId] = useState<string | null>(initialEligible.some((s) => s.id === initialStaffId) ? initialStaffId : null);
+  const [step, setStep] = useState<Step>(initialEligible.length ? (initialEligible.length > 1 && !initialEligible.some((s) => s.id === initialStaffId) ? "staff" : "time") : "service");
   const [slot, setSlot] = useState<string | null>(null);
   const [look, setLook] = useState<PublicLook | null>(null);
   const [viewing, setViewing] = useState<PublicLook | null>(null);
@@ -301,9 +303,9 @@ export function SlotPicker({ slug, serviceIds, staffId, value, onChange, token, 
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <button className="icon-btn" disabled={from <= today} onClick={() => setFrom(DateTime.fromISO(from).minus({ days: 14 }).toISODate()! < today ? today : DateTime.fromISO(from).minus({ days: 14 }).toISODate()!)} aria-label="prev"><Icon name="chevronLeft" size={22} /></button>
+        <button className="icon-btn" disabled={from <= today} onClick={() => setFrom(DateTime.fromISO(from).minus({ days: 14 }).toISODate()! < today ? today : DateTime.fromISO(from).minus({ days: 14 }).toISODate()!)} aria-label={t("common.previous")}><Icon name="chevronLeft" size={22} /></button>
         <span className="text-[15px] font-medium text-stone-900 first-letter:uppercase">{DateTime.fromISO(selectedDate ?? from).setLocale(locale).toFormat("LLLL yyyy")}</span>
-        <button className="icon-btn" onClick={() => setFrom(DateTime.fromISO(from).plus({ days: 14 }).toISODate()!)} aria-label="next"><Icon name="chevronRight" size={22} /></button>
+        <button className="icon-btn" onClick={() => setFrom(DateTime.fromISO(from).plus({ days: 14 }).toISODate()!)} aria-label={t("common.next")}><Icon name="chevronRight" size={22} /></button>
       </div>
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-2">
         {(days ?? Array.from({ length: 7 }, (_, i) => ({ date: DateTime.fromISO(from).plus({ days: i }).toISODate()!, slots: [] }))).map((d) => {

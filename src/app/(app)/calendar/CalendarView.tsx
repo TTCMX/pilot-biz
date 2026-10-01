@@ -17,7 +17,7 @@ import { localTimeOf, zonedToUtc } from "@/lib/i18n/format";
 import { formatPhone } from "@/lib/phone";
 import type { MessageKey } from "@/lib/i18n";
 import type { AppointmentStatus } from "@/lib/types";
-import { serviceName } from "@/lib/types";
+import { serviceIdsOf, serviceName } from "@/lib/types";
 
 export type CalendarAppointment = {
   id: string;
@@ -33,6 +33,7 @@ export type CalendarAppointment = {
   source: string;
   customer: { id: string; first_name: string; last_name: string | null; phone: string | null } | null;
   service_label?: string | null;
+  items?: { service_id: string | null; position: number }[] | null;
   service: { name: string; duration_minutes: number } | null;
 };
 
@@ -202,8 +203,8 @@ export function CalendarView(props: Props) {
       <div className="flex flex-wrap items-center gap-2 pt-1">
         <button className="btn-secondary btn-sm" onClick={() => nav({ date: DateTime.now().setZone(timezone).toISODate()! })}>{t("calendar.today")}</button>
         <div className="flex">
-          <button className="icon-btn" onClick={() => shift(-1)} aria-label="prev"><Icon name="chevronLeft" size={24} /></button>
-          <button className="icon-btn" onClick={() => shift(1)} aria-label="next"><Icon name="chevronRight" size={24} /></button>
+          <button className="icon-btn" onClick={() => shift(-1)} aria-label={t("common.previous")}><Icon name="chevronLeft" size={24} /></button>
+          <button className="icon-btn" onClick={() => shift(1)} aria-label={t("common.next")}><Icon name="chevronRight" size={24} /></button>
         </div>
         <h1 className="mr-auto font-display text-[24px] font-light text-stone-900 first-letter:uppercase sm:text-[28px]">{heading}</h1>
         <div className="flex h-11 overflow-hidden rounded-full border border-brand-200">
@@ -376,7 +377,7 @@ export function CalendarView(props: Props) {
               setSelected(null);
               setCreating({
                 customer: s.customer ? { ...s.customer } : null,
-                serviceId: s.service_id,
+                serviceIds: serviceIdsOf(s),
                 staffId: s.staff_id,
                 date: DateTime.fromISO(s.start_at).setZone(timezone).plus({ weeks: 4 }).toISODate()!,
                 time: localTimeOf(s.start_at, timezone),

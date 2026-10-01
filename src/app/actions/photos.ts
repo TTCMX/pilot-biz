@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireBusiness } from "@/lib/context";
 import { getPublicBusiness } from "@/lib/booking/public";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PHOTOS_BUCKET, PHOTO_COLUMNS, attachLookAsReference, createUploadTargets, registerPhotos, withSignedUrls, type Photo, type PhotoKind, type UploadTarget } from "@/lib/photos";
+import { PHOTOS_BUCKET, PHOTO_COLUMNS, attachLookAsReference, createUploadTargets, forgetSignedUrls, registerPhotos, withSignedUrls, type Photo, type PhotoKind, type UploadTarget } from "@/lib/photos";
 import { fail, ok, type ActionResult } from "./result";
 
 // Photo uploads happen in two steps: start* returns signed upload URLs (after
@@ -55,6 +55,7 @@ export async function finishReferenceUpload(slug: string, token: string, uploade
   if (!paths.safeParse(uploaded).success) return fail("errors.invalid");
   const ctx = await publicScope(slug, token);
   if (!ctx) return fail("errors.not_found");
+  if (!ctx.open) return fail("errors.cannot_change");
   const count = await registerPhotos(ctx.db, ctx.scope, "reference", uploaded, null);
   revalidatePath(`/${slug}/a/${token}`);
   revalidatePath("/customers", "layout");
@@ -119,6 +120,7 @@ export async function deletePhoto(photoId: string): Promise<ActionResult> {
   const { data: photo } = await supabase.from("appointment_photos").select("id, storage_path").eq("id", photoId).eq("business_id", business.id).maybeSingle();
   if (!photo) return fail("errors.not_found");
   await createAdminClient().storage.from(PHOTOS_BUCKET).remove([photo.storage_path]);
+  forgetSignedUrls([photo.storage_path]);
   await supabase.from("appointment_photos").delete().eq("id", photo.id);
   revalidatePath("/customers", "layout");
   return ok(undefined);

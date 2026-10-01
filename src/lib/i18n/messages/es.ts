@@ -3,6 +3,10 @@ import type { MessageKey } from "./en";
 export const es: Record<MessageKey, string> = {
   // common
   "common.back": "Atrás",
+  "common.open": "Abrir",
+  "common.next": "Siguiente",
+  "common.previous": "Anterior",
+  "common.close": "Cerrar",
   "common.cancel": "Cancelar",
   "common.change": "Cambiar",
   "common.continue": "Continuar",
@@ -193,6 +197,8 @@ export const es: Record<MessageKey, string> = {
   // customers
   "customers.import": "Importar CSV",
   "customers.empty": "Todavía no hay clientes aquí.",
+  "customers.showing": "Mostrando {shown} de {total}",
+  "customers.show_more": "Mostrar más",
   "customer.new": "Nueva clienta",
   "customer.search": "Buscar por nombre, teléfono o correo",
   "customer.name": "Nombre",
@@ -308,6 +314,7 @@ export const es: Record<MessageKey, string> = {
 
   // public booking
   "booking.select_service": "¿Qué le gustaría hoy?",
+  "booking.meta_description": "Reserve su cita en {name}{city} en línea, en menos de un minuto.",
   "booking.no_staff_combo": "Nadie del equipo hace todos estos juntos. Elija otra combinación.",
   "booking.max_services": "Hasta {count} servicios por cita.",
   "booking.continue": "Continuar",
@@ -389,7 +396,7 @@ export const es: Record<MessageKey, string> = {
   "errors.time_required": "Elige un horario.",
   "errors.invalid_hours": "La hora de cierre debe ser posterior a la de apertura.",
   "errors.invalid_phone": "Escribe un teléfono válido.",
-  "errors.invalid_image": "Usa una imagen PNG, JPG, WEBP o SVG de menos de 2 MB.",
+  "errors.invalid_image": "Usa una imagen PNG, JPG o WEBP de menos de 2 MB.",
   "errors.invalid_slug": "Usa de 3 a 60 letras minúsculas, números o guiones.",
   "errors.slug_taken": "Ese enlace ya está en uso.",
 

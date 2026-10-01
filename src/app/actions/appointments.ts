@@ -6,7 +6,7 @@ import { requireBusiness } from "@/lib/context";
 import { BookingError, MAX_SERVICES_PER_BOOKING, createAppointment, findOrCreateCustomer, loadBookingData, rescheduleAppointment, slotsFor } from "@/lib/booking/service";
 import { audit } from "@/lib/audit";
 import type { Appointment, AppointmentStatus } from "@/lib/types";
-import { fail, ok, type ActionResult } from "./result";
+import { dbFail, fail, ok, type ActionResult } from "./result";
 
 const uuid = z.uuid();
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -18,7 +18,8 @@ function revalidate() {
 
 function bookingError(e: unknown) {
   if (e instanceof BookingError) return fail(`errors.${e.code}`);
-  return fail(e instanceof Error ? e.message : "errors.generic");
+  console.error("[appointments]", e);
+  return fail("errors.generic");
 }
 
 /** Available start times for the owner (no notice / advance limits). */
@@ -100,7 +101,7 @@ export async function setAppointmentStatus(id: string, status: AppointmentStatus
     .update({ status, cancelled_at: status === "cancelled" ? new Date().toISOString() : null })
     .eq("id", id)
     .eq("business_id", business.id);
-  if (error) return fail(error.code === "23P01" ? "errors.slot_taken" : error.message);
+  if (error) return dbFail(error);
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: `status:${status}`, entity: "appointment", entity_id: id });
   revalidate();
   return ok(undefined);
@@ -111,7 +112,7 @@ export async function updateAppointmentDetails(id: string, input: { notes?: stri
   if (!uuid.safeParse(id).success || !parsed.success) return fail("errors.invalid");
   const { business, supabase } = await requireBusiness();
   const { error } = await supabase.from("appointments").update(parsed.data).eq("id", id).eq("business_id", business.id);
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   revalidate();
   return ok(undefined);
 }

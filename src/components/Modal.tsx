@@ -2,8 +2,10 @@
 
 import { useEffect } from "react";
 import { Icon } from "@/components/Icon";
+import { useI18n } from "@/components/I18nProvider";
 
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
+  const { t } = useI18n();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -28,7 +30,7 @@ export function Modal({ open, onClose, title, children }: { open: boolean; onClo
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 className="h2 text-[24px]">{title}</h2>
-          <button className="icon-btn -mr-2 -mt-1" onClick={onClose} aria-label="Close">
+          <button className="icon-btn -mr-2 -mt-1" onClick={onClose} aria-label={t("common.close")}>
             <Icon name="close" size={22} />
           </button>
         </div>

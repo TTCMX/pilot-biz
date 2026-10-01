@@ -12,12 +12,12 @@ import { HeroShapes, Icon } from "@/components/Icon";
 import { PhotoGrid, PhotoUploadButton, type PhotoView } from "@/components/Photos";
 import { finishReferenceUpload, startReferenceUpload } from "@/app/actions/photos";
 import type { AppointmentStatus } from "@/lib/types";
-import { serviceName } from "@/lib/types";
+import { serviceIdsOf, serviceName } from "@/lib/types";
 
 type Appt = {
   start_at: string; end_at: string; status: AppointmentStatus; price: number; currency: string;
   service_id: string; staff_id: string; public_token: string;
-  service_label?: string | null; service: { name: string; duration_minutes: number } | null; staff: { name: string } | null; customer: { first_name: string } | null;
+  service_label?: string | null; items?: { service_id: string | null; position: number }[] | null; service: { name: string; duration_minutes: number } | null; staff: { name: string } | null; customer: { first_name: string } | null;
 };
 
 export function ManageBooking({ slug, isNew, appt, address, businessPhone, photos, photosFailed }: { slug: string; isNew: boolean; appt: Appt; address: string; businessPhone: string | null; photos: PhotoView[]; photosFailed: boolean }) {
@@ -29,7 +29,7 @@ export function ManageBooking({ slug, isNew, appt, address, businessPhone, photo
   const [notice, setNotice] = useState<string | null>(null);
   const active = (appt.status === "scheduled" || appt.status === "confirmed") && Date.parse(appt.start_at) > Date.now();
   const past = appt.status === "completed" || Date.parse(appt.end_at) < Date.now();
-  const bookAgain = `/${slug}?service=${appt.service_id}&staff=${appt.staff_id}&rebook=${appt.public_token}`;
+  const bookAgain = `/${slug}?service=${serviceIdsOf(appt).join(",")}&staff=${appt.staff_id}&rebook=${appt.public_token}`;
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, success: string) =>
     start(async () => {

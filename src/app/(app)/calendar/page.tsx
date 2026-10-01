@@ -20,7 +20,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const [appts, staff, services, staffServices, rules, exceptions] = await Promise.all([
     supabase
       .from("appointments")
-      .select("id, customer_id, staff_id, service_id, start_at, end_at, status, price, currency, notes, source, customer:customers(id, first_name, last_name, phone), service_label, service:services(name, duration_minutes)")
+      .select("id, customer_id, staff_id, service_id, start_at, end_at, status, price, currency, notes, source, customer:customers(id, first_name, last_name, phone), service_label, service:services(name, duration_minutes), items:appointment_services(service_id, position)")
       .eq("business_id", business.id)
       .gte("start_at", from.toUTC().toISO()!)
       .lt("start_at", to.toUTC().toISO()!)
@@ -51,7 +51,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       rules={rules.data ?? []}
       exceptions={(exceptions.data ?? []) as never}
       weekStart={business.week_start}
-      prefill={sp.new === "1" ? { customer: prefillCustomer, serviceId: sp.service ?? null, staffId: sp.staff ?? null, time: sp.time ?? null, rebookedFromId: sp.rebook ?? null } : null}
+      prefill={sp.new === "1" ? { customer: prefillCustomer, serviceIds: sp.service ? sp.service.split(",").slice(0, 5) : null, staffId: sp.staff ?? null, time: sp.time ?? null, rebookedFromId: sp.rebook ?? null } : null}
     />
   );
 }

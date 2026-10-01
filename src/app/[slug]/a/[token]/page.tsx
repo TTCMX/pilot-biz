@@ -15,7 +15,7 @@ export default async function ManagePage({ params, searchParams }: { params: Pro
   const db = createAdminClient();
   const { data: appt } = await db
     .from("appointments")
-    .select("id, start_at, end_at, status, price, currency, service_id, staff_id, public_token, service_label, service:services(name, duration_minutes), staff:staff(name), customer:customers(first_name)")
+    .select("id, start_at, end_at, status, price, currency, service_id, staff_id, public_token, service_label, service:services(name, duration_minutes), items:appointment_services(service_id, position), staff:staff(name), customer:customers(first_name)")
     .eq("public_token", token)
     .eq("business_id", business.id)
     .maybeSingle();

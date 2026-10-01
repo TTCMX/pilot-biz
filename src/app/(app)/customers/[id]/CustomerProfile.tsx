@@ -21,7 +21,7 @@ import type { Photo } from "@/lib/photos";
 export type HistoryRow = {
   id: string; start_at: string; end_at: string; status: AppointmentStatus; price: number; currency: string;
   service_id: string; staff_id: string; source: string;
-  service_label?: string | null; service: { name: string } | null; staff: { name: string } | null;
+  service_label?: string | null; items?: { service_id: string | null; position: number }[] | null; service: { name: string } | null; staff: { name: string } | null;
 };
 
 export function CustomerProfile({ customer, stats, history, intervalDays, daysSinceLast, suggestedDate, rebookHref, businessName, bookingUrl, photos }: {

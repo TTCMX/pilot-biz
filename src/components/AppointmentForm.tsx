@@ -16,7 +16,7 @@ export type FormStaff = { id: string; name: string; color: string | null };
 
 export type AppointmentPrefill = {
   customer?: PickerCustomer | null;
-  serviceId?: string | null;
+  serviceIds?: string[] | null;
   staffId?: string | null;
   date?: string;
   time?: string | null;
@@ -37,7 +37,10 @@ export function AppointmentForm({
   const { t, money, duration, timezone, time: fmtTime } = useI18n();
   const [customer, setCustomer] = useState<PickerCustomer | null>(prefill.customer ?? null);
   const [newCustomer, setNewCustomer] = useState<{ first_name: string; last_name: string; phone: string } | null>(null);
-  const [serviceIds, setServiceIds] = useState<string[]>([prefill.serviceId ?? services[0]?.id ?? ""].filter(Boolean));
+  const [serviceIds, setServiceIds] = useState<string[]>(() => {
+    const known = (prefill.serviceIds ?? []).filter((id) => services.some((s) => s.id === id));
+    return known.length ? known : [services[0]?.id ?? ""].filter(Boolean);
+  });
   const [staffId, setStaffId] = useState<string>(prefill.staffId ?? (staff.length === 1 ? staff[0].id : ""));
   const [date, setDate] = useState(prefill.date ?? defaultDate);
   const [time, setTime] = useState(prefill.time ?? "");

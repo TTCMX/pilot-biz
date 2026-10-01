@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireBusiness } from "@/lib/context";
 import { toE164 } from "@/lib/phone";
 import { audit } from "@/lib/audit";
-import { fail, ok, type ActionResult } from "./result";
+import { dbFail, fail, ok, type ActionResult } from "./result";
 
 const customerSchema = z.object({
   first_name: z.string().trim().min(1).max(100),
@@ -31,7 +31,7 @@ export async function saveCustomer(input: z.input<typeof customerSchema>, id?: s
   const result = id
     ? await supabase.from("customers").update(row).eq("id", id).eq("business_id", business.id).select("id").single()
     : await supabase.from("customers").insert({ ...row, business_id: business.id, source: "owner" }).select("id").single();
-  if (result.error) return fail(result.error.message);
+  if (result.error) return dbFail(result.error);
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: id ? "update" : "create", entity: "customer", entity_id: result.data.id });
   revalidatePath("/customers");
   return ok({ id: result.data.id });
@@ -40,7 +40,7 @@ export async function saveCustomer(input: z.input<typeof customerSchema>, id?: s
 export async function deleteCustomer(id: string): Promise<ActionResult> {
   const { business, supabase, user } = await requireBusiness();
   const { error } = await supabase.from("customers").delete().eq("id", id).eq("business_id", business.id);
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: "delete", entity: "customer", entity_id: id });
   revalidatePath("/customers");
   return ok(undefined);
@@ -83,7 +83,7 @@ export async function importCustomers(rows: z.input<typeof importSchema>): Promi
   }
   for (let i = 0; i < toInsert.length; i += 500) {
     const { error } = await supabase.from("customers").insert(toInsert.slice(i, i + 500));
-    if (error) return fail(error.message);
+    if (error) return dbFail(error);
   }
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: "import", entity: "customer", data: { imported: toInsert.length, skipped } });
   revalidatePath("/customers");
@@ -102,6 +102,6 @@ export async function searchCustomers(q: string): Promise<ActionResult<{ id: str
     query = query.or(filters.join(","));
   }
   const { data, error } = await query;
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   return ok(data ?? []);
 }

@@ -5,13 +5,15 @@ import { CustomersView } from "./CustomersView";
 
 export const metadata = { title: "Customers" };
 
-export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ segment?: string; q?: string; new?: string }> }) {
+const PAGE_SIZE = 100;
+
+export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ segment?: string; q?: string; new?: string; limit?: string }> }) {
   const { business, supabase } = await requireBusiness();
   const sp = await searchParams;
   const segment: Segment = (SEGMENTS as readonly string[]).includes(sp.segment ?? "") ? (sp.segment as Segment) : "all";
 
   const [customers, stats] = await Promise.all([
-    supabase.from("customers").select("*").eq("business_id", business.id).order("first_name").limit(5000),
+    supabase.from("customers").select("id, first_name, last_name, email, phone, created_at").eq("business_id", business.id).order("first_name").limit(5000),
     supabase.from("customer_stats").select("*").eq("business_id", business.id).limit(5000),
   ]);
   const statsById = new Map(((stats.data ?? []) as CustomerStats[]).map((s) => [s.customer_id, s]));
@@ -27,5 +29,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       (!q || `${c.first_name} ${c.last_name ?? ""} ${c.email ?? ""} ${c.phone ?? ""}`.toLowerCase().includes(q)),
   );
 
-  return <CustomersView customers={filtered} counts={counts} segment={segment} q={sp.q ?? ""} openNew={sp.new === "1"} />;
+  // Render a page at a time: thousands of rows would make the screen slow to load.
+  const limit = Math.min(Math.max(Number(sp.limit) || PAGE_SIZE, PAGE_SIZE), 5000);
+  return <CustomersView customers={filtered.slice(0, limit)} total={filtered.length} limit={limit} counts={counts} segment={segment} q={sp.q ?? ""} openNew={sp.new === "1"} />;
 }

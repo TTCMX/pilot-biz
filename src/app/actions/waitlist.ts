@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireBusiness } from "@/lib/context";
 import { findOrCreateCustomer } from "@/lib/booking/service";
-import { fail, ok, type ActionResult } from "./result";
+import { dbFail, fail, ok, type ActionResult } from "./result";
 
 const uuid = z.uuid();
 const time = z.string().regex(/^\d{2}:\d{2}$/);
@@ -41,7 +41,7 @@ export async function addWaitlistEntry(input: z.input<typeof schema>): Promise<A
     notes: v.notes || null,
     source: "owner",
   });
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   revalidatePath("/waitlist");
   return ok(undefined);
 }
@@ -50,7 +50,7 @@ export async function setWaitlistStatus(id: string, status: "active" | "contacte
   if (!uuid.safeParse(id).success) return fail("errors.invalid");
   const { business, supabase } = await requireBusiness();
   const { error } = await supabase.from("waitlist_entries").update({ status }).eq("id", id).eq("business_id", business.id);
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   revalidatePath("/waitlist");
   revalidatePath("/dashboard");
   return ok(undefined);

@@ -51,7 +51,7 @@ export function SettingsView({ business, bookingUrl, appUrl, email }: { business
           <Icon name="link" size={20} className="text-stone-500" />
           <span className="flex-1 truncate text-sm">{bookingUrl}</span>
           <button className="btn-secondary btn-sm" onClick={() => { navigator.clipboard?.writeText(bookingUrl); setCopied(true); }}><Icon name="copy" size={16} />{copied ? t("common.copied") : t("booking_page.copy_link")}</button>
-          <a className="btn-secondary btn-sm" href={bookingUrl} target="_blank" rel="noreferrer" aria-label="open"><Icon name="openInNew" size={16} /></a>
+          <a className="btn-secondary btn-sm" href={bookingUrl} target="_blank" rel="noreferrer" aria-label={t("common.open")}><Icon name="openInNew" size={16} /></a>
         </div>
       </section>
 
@@ -67,7 +67,7 @@ export function SettingsView({ business, bookingUrl, appUrl, email }: { business
             <div className="flex size-16 items-center justify-center rounded-2xl bg-brand-100 text-2xl font-medium text-brand-700">{business.name[0]}</div>
           )}
           <form action={(f) => start(async () => done(await uploadLogo(f)))} className="flex flex-1 flex-wrap items-center gap-2">
-            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="text-sm" required />
+            <input type="file" name="logo" accept="image/png,image/jpeg,image/webp" className="text-sm" required />
             <button className="btn-secondary btn-sm" disabled={pending}>{t("settings.upload")}</button>
           </form>
         </div>

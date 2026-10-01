@@ -13,21 +13,24 @@ import type { Customer, CustomerStats } from "@/lib/types";
 import { Icon } from "@/components/Icon";
 import { Avatar } from "@/components/Avatar";
 
-type Row = Customer & { stats: CustomerStats | null; segments: Segment[] };
+type Row = Pick<Customer, "id" | "first_name" | "last_name" | "email" | "phone" | "created_at"> & { stats: CustomerStats | null; segments: Segment[] };
 
-export function CustomersView({ customers, counts, segment, q, openNew }: { customers: Row[]; counts: Record<Segment, number>; segment: Segment; q: string; openNew: boolean }) {
+export function CustomersView({ customers, total, limit, counts, segment, q, openNew }: {
+  customers: Row[]; total: number; limit: number; counts: Record<Segment, number>; segment: Segment; q: string; openNew: boolean;
+}) {
   const { t, money, date } = useI18n();
   const router = useRouter();
   const [creating, setCreating] = useState(openNew);
   const [importing, setImporting] = useState(false);
   const [search, setSearch] = useState(q);
 
-  const go = (params: { segment?: string; q?: string }) => {
+  const go = (params: { segment?: string; q?: string; limit?: number }) => {
     const sp = new URLSearchParams();
     const seg = params.segment ?? segment;
     const query = params.q ?? search;
     if (seg !== "all") sp.set("segment", seg);
     if (query) sp.set("q", query);
+    if (params.limit) sp.set("limit", String(params.limit));
     router.push(`/customers${sp.size ? `?${sp}` : ""}`);
   };
 
@@ -106,7 +109,7 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
                         <Avatar name={`${c.first_name} ${c.last_name ?? ""}`} size={36} />
                         <div className="min-w-0">
                           <div className="font-medium text-stone-900">
-                            {c.first_name} {c.last_name}
+                            <Link href={`/customers/${c.id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>{c.first_name} {c.last_name}</Link>
                             {c.segments.includes("vip") && <span className="chip ml-2 gap-1 bg-warn-100 text-warn-700"><Icon name="star" size={12} />VIP</span>}
                           </div>
                           <div className="text-xs text-stone-500">{formatPhone(c.phone) || c.email}</div>
@@ -122,6 +125,12 @@ export function CustomersView({ customers, counts, segment, q, openNew }: { cust
               </tbody>
             </table>
           </div>
+          {total > customers.length && (
+            <div className="flex flex-col items-center gap-2 pt-2">
+              <p className="muted">{t("customers.showing", { shown: customers.length, total })}</p>
+              <button className="btn-secondary" onClick={() => go({ limit: limit + 100 })}>{t("customers.show_more")}</button>
+            </div>
+          )}
         </>
       )}
 

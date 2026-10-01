@@ -6,7 +6,7 @@ import { requireBusiness } from "@/lib/context";
 import { audit } from "@/lib/audit";
 import { STAFF_COLORS } from "@/lib/templates";
 import { toE164 } from "@/lib/phone";
-import { fail, ok, type ActionResult } from "./result";
+import { dbFail, fail, ok, type ActionResult } from "./result";
 
 const uuid = z.uuid();
 
@@ -33,13 +33,13 @@ export async function saveService(input: z.input<typeof serviceSchema>, id?: str
   const res = id
     ? await supabase.from("services").update(values).eq("id", id).eq("business_id", business.id).select("id").single()
     : await supabase.from("services").insert({ ...values, business_id: business.id }).select("id").single();
-  if (res.error) return fail(res.error.message);
+  if (res.error) return dbFail(res.error);
   const serviceId = res.data.id;
 
   await supabase.from("staff_services").delete().eq("service_id", serviceId).eq("business_id", business.id);
   if (staffIds.length) {
     const { error } = await supabase.from("staff_services").insert(staffIds.map((staff_id) => ({ business_id: business.id, staff_id, service_id: serviceId })));
-    if (error) return fail(error.message);
+    if (error) return dbFail(error);
   }
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: id ? "update" : "create", entity: "service", entity_id: serviceId });
   revalidatePath("/services");
@@ -78,7 +78,7 @@ export async function saveStaff(input: z.input<typeof staffSchema>, id?: string)
   let staffId = id;
   if (id) {
     const { error } = await supabase.from("staff").update(values).eq("id", id).eq("business_id", business.id);
-    if (error) return fail(error.message);
+    if (error) return dbFail(error);
   } else {
     const { count } = await supabase.from("staff").select("id", { count: "exact", head: true }).eq("business_id", business.id);
     const { data, error } = await supabase
@@ -86,7 +86,7 @@ export async function saveStaff(input: z.input<typeof staffSchema>, id?: string)
       .insert({ ...values, color: values.color ?? STAFF_COLORS[(count ?? 0) % STAFF_COLORS.length], sort_order: count ?? 0, business_id: business.id })
       .select("id")
       .single();
-    if (error) return fail(error.message);
+    if (error) return dbFail(error);
     staffId = data.id;
     // New professionals start with the hours of the first professional.
     const { data: first } = await supabase.from("staff").select("id").eq("business_id", business.id).neq("id", staffId).order("sort_order").order("created_at").limit(1).maybeSingle();
@@ -101,7 +101,7 @@ export async function saveStaff(input: z.input<typeof staffSchema>, id?: string)
   await supabase.from("staff_services").delete().eq("staff_id", staffId!).eq("business_id", business.id);
   if (serviceIds.length) {
     const { error } = await supabase.from("staff_services").insert(serviceIds.map((service_id) => ({ business_id: business.id, staff_id: staffId!, service_id })));
-    if (error) return fail(error.message);
+    if (error) return dbFail(error);
   }
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: id ? "update" : "create", entity: "staff", entity_id: staffId });
   revalidatePath("/staff");
@@ -144,7 +144,7 @@ export async function addException(input: z.input<typeof exceptionSchema>): Prom
       note: v.note || null,
     })),
   );
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: "create", entity: "availability_exception", data: v });
   revalidatePath("/staff");
   return ok(undefined);
@@ -153,7 +153,7 @@ export async function addException(input: z.input<typeof exceptionSchema>): Prom
 export async function deleteException(id: string): Promise<ActionResult> {
   const { business, supabase } = await requireBusiness();
   const { error } = await supabase.from("availability_exceptions").delete().eq("id", id).eq("business_id", business.id);
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   revalidatePath("/staff");
   return ok(undefined);
 }

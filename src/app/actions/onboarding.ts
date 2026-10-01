@@ -8,7 +8,7 @@ import { slugify } from "@/lib/slug";
 import { BUSINESS_TYPES, STAFF_COLORS } from "@/lib/templates";
 import { audit } from "@/lib/audit";
 import type { Business } from "@/lib/types";
-import { fail, ok, type ActionResult } from "./result";
+import { dbFail, fail, ok, type ActionResult } from "./result";
 
 const businessSchema = z.object({
   name: z.string().trim().min(1).max(100),
@@ -47,7 +47,7 @@ export async function createBusiness(input: z.input<typeof businessSchema>): Pro
       p_language: inferred.language,
       p_week_start: inferred.weekStart,
     });
-    if (error && error.code !== "23505") return fail(error.message);
+    if (error && error.code !== "23505") return dbFail(error);
     business = (data as Business) ?? null;
   }
   if (!business) return fail("errors.generic");
@@ -82,7 +82,7 @@ export async function saveOnboardingServices(input: z.input<typeof servicesSchem
     .from("services")
     .insert(parsed.data.map((s, i) => ({ ...s, business_id: business.id, currency: business.currency, sort_order: i })))
     .select("id");
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
 
   const { data: staff } = await supabase.from("staff").select("id").eq("business_id", business.id);
   const links = (staff ?? []).flatMap((st) => (services ?? []).map((sv) => ({ business_id: business.id, staff_id: st.id, service_id: sv.id })));
@@ -114,13 +114,13 @@ export async function saveWeeklyHours(input: WeeklyHours, staffId?: string): Pro
   if (!ids.length) return fail("errors.not_found");
 
   const { error: delError } = await supabase.from("availability_rules").delete().eq("business_id", business.id).in("staff_id", ids);
-  if (delError) return fail(delError.message);
+  if (delError) return dbFail(delError);
   const rows = ids.flatMap((id) =>
     parsed.data.filter((d) => d.open).map((d) => ({ business_id: business.id, staff_id: id, day_of_week: d.day, start_time: d.start, end_time: d.end })),
   );
   if (rows.length) {
     const { error } = await supabase.from("availability_rules").insert(rows);
-    if (error) return fail(error.message);
+    if (error) return dbFail(error);
   }
   await audit(supabase, { business_id: business.id, actor_id: user.id, action: "update", entity: "availability", data: { staff: ids } });
   revalidatePath("/staff");
@@ -148,7 +148,7 @@ export async function saveOnboardingStaff(input: z.input<typeof staffSchema>): P
     .from("staff")
     .insert(members.map((m, i) => ({ business_id: business.id, name: m.name, color: STAFF_COLORS[((count ?? 1) + i) % STAFF_COLORS.length], sort_order: (count ?? 1) + i })))
     .select("id");
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
 
   // New professionals inherit the business hours and all services.
   const [{ data: rules }, { data: services }] = await Promise.all([
@@ -168,7 +168,7 @@ export async function saveOnboardingStaff(input: z.input<typeof staffSchema>): P
 export async function completeOnboarding(): Promise<ActionResult> {
   const { business, supabase } = await requireBusiness({ allowIncompleteOnboarding: true });
   const { error } = await supabase.from("businesses").update({ onboarding_completed: true }).eq("id", business.id);
-  if (error) return fail(error.message);
+  if (error) return dbFail(error);
   revalidatePath("/", "layout");
   return ok(undefined);
 }

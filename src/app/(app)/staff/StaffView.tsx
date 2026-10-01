@@ -43,7 +43,7 @@ export function StaffView({ staff, services, links, rules, exceptions, weekStart
         {items.map((e) => (
           <li key={e.id} className="flex items-center justify-between gap-2 rounded-lg bg-stone-100 py-1 pl-3 pr-1 text-sm">
             <span className="first-letter:uppercase">{exceptionLabel(e)}</span>
-            <button className="icon-btn size-7 text-stone-500" disabled={pending} onClick={() => start(async () => { await deleteException(e.id); router.refresh(); })} aria-label="delete"><Icon name="close" size={16} /></button>
+            <button className="icon-btn size-7 text-stone-500" disabled={pending} onClick={() => start(async () => { await deleteException(e.id); router.refresh(); })} aria-label={t("common.delete")}><Icon name="close" size={16} /></button>
           </li>
         ))}
       </ul>
